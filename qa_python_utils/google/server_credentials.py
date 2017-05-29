@@ -10,7 +10,7 @@ SCOPES = ['https://www.googleapis.com/auth/drive',
           'https://www.googleapis.com/auth/drive.metadata.readonly',
           'https://www.googleapis.com/auth/drive.photos.readonly',
           'https://www.googleapis.com/auth/drive.readonly']
-CREDENTIALS_JSON = os.getenv('PYTHON_UTILS_CREDENTIALS_JSON', os.getenv('CREDENTIALS_JSON'))  # noqa
+CREDENTIALS_JSON = os.getenv('QA_PYTHON_UTILS_CREDENTIALS_JSON', os.getenv('CREDENTIALS_JSON'))  # noqa
 
 
 def get_credentials():

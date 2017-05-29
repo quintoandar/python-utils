@@ -1,10 +1,12 @@
-import google.server_credentials as google_credentials
+import logging
+import os
+import unicodedata
+
+import httplib2shim
 from apiclient import discovery
 from apiclient.http import MediaFileUpload
-import os
-import httplib2shim
-import logging
-import unicodedata
+
+from qa_python_utils import google as google_credentials
 
 LOGGER = logging.getLogger(__name__)
 
