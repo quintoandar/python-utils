@@ -1,0 +1,26 @@
+{
+  "name": "5a-python-utils",
+  "version": "1.0.0",
+  "description": "Package.json for QuintoAndar Python Utils",
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {
+    "pre-commit": "^1.2.2"
+  },
+  "scripts": {
+    "run-flake": "flake8"
+  },
+  "pre-commit": [
+    "run-flake"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/quintoandar/python-utils.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/quintoandar/python-utils/issues"
+  },
+  "homepage": "https://github.com/quintoandar/python-utils#readme"
+}

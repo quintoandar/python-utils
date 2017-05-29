@@ -1,0 +1,57 @@
+# Don't check auto-generated stuff into git
+.coverage
+coverage
+build
+node_modules
+stats.json
+htmlcov
+
+# Cruft
+.DS_Store
+npm-debug.log
+.idea
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+public/bower_components/
+*.PAG
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# virtualenv
+venv/
+ENV/
