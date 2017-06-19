@@ -1,0 +1,18 @@
+{
+  "qa_python_utils/tests/google/test_drive.py::test_create_folder": true,
+  "qa_python_utils/tests/google/test_drive.py::test_create_folder_with_parent": true,
+  "qa_python_utils/tests/google/test_drive.py::test_delete_file": true,
+  "qa_python_utils/tests/google/test_drive.py::test_download_file": true,
+  "qa_python_utils/tests/google/test_drive.py::test_download_file_empty": true,
+  "qa_python_utils/tests/google/test_drive.py::test_get_file_info": true,
+  "qa_python_utils/tests/google/test_drive.py::test_get_file_media": true,
+  "qa_python_utils/tests/google/test_drive.py::test_get_folders": true,
+  "qa_python_utils/tests/google/test_drive.py::test_get_folders_2": true,
+  "qa_python_utils/tests/google/test_drive.py::test_grant_permission": true,
+  "qa_python_utils/tests/google/test_drive.py::test_list_files_1": true,
+  "qa_python_utils/tests/google/test_drive.py::test_list_files_2": true,
+  "qa_python_utils/tests/google/test_drive.py::test_list_files_sp_1": true,
+  "qa_python_utils/tests/google/test_drive.py::test_list_files_sp_2": true,
+  "qa_python_utils/tests/google/test_drive.py::test_rename_file": true,
+  "qa_python_utils/tests/google/test_drive.py::test_update_file": true
+}

@@ -1,8 +1,8 @@
 import logging
 import os
 import unicodedata
-
 import httplib2shim
+
 from apiclient import discovery
 from apiclient.http import MediaFileUpload
 
