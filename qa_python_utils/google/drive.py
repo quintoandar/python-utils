@@ -4,7 +4,7 @@ import unicodedata
 
 import httplib2shim
 from apiclient import discovery
-from apiclient.http import MediaFileUpload
+from apiclient.http import MediaFileUpload, MediaIoBaseUpload
 
 import qa_python_utils.google.server_credentials as google_credentials
 
@@ -105,13 +105,37 @@ class Drive(object):
         download_file.write(data)
         return file_name
 
-    def upload_file(self, file_path,
-                    description, parent_id):  # pragma: no cover
+    # pragma: no cover
+    def upload_saved_file(self, file_path, description, parent_id):
         """
-        Uploads a file to google drive
+        Uploads a file saved in disk to google drive
         """
         file_name = os.path.basename(file_path)
         media_body = MediaFileUpload(file_path, resumable=True)
+        return self.__upload_file(
+            media_body,
+            file_name,
+            description,
+            parent_id
+        )
+
+    def upload_in_memory_file(self, file_storage, description, parent_id):
+        """
+        Uploads a file saved in memory to google drive
+        """
+        file_name = os.path.basename(file_storage.filename)
+        media_body = MediaIoBaseUpload(
+            file_storage.stream,
+            mimetype=file_storage.mimetype,
+            resumable=True)
+        return self.__upload_file(
+            media_body,
+            file_name,
+            description,
+            parent_id
+        )
+
+    def __upload_file(self, media_body, file_name, description, parent_id):
         body = {
             'title': file_name,
             'description': description,
