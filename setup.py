@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='qa-python-utils',
-    version='0.0.2',
+    version='0.0.3',
     packages=['qa_python_utils',
               'qa_python_utils.google',
               'qa_python_utils.aws'],
