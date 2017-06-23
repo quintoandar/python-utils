@@ -13,7 +13,8 @@ setup(
     description='Package for python utils',
     install_requires=[
         'google-api-python-client==1.6.2',
-        'oauth2client==4.1.0'
-        'httplib2shim==0.0.1']
+        'oauth2client==4.1.0',
+        'httplib2shim==0.0.1',
+        'arrow==0.10.0']
 
 )
