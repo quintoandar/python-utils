@@ -1,5 +1,9 @@
+boto3==1.4.4
+botocore==1.5.74
 google-api-python-client==1.6.2
 oauth2client==4.1.0
 flake8==3.3.0
 httplib2shim==0.0.1
+pandas==0.20.1
+pyarrow==0.4.0
 arrow==0.10.0
