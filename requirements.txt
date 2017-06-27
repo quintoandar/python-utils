@@ -5,5 +5,5 @@ oauth2client==4.1.0
 flake8==3.3.0
 httplib2shim==0.0.1
 pandas==0.20.1
-pyarrow==0.4.0
+fastparquet==0.1.0
 arrow==0.10.0
