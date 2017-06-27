@@ -8,3 +8,4 @@ pandas==0.20.1
 Cython==0.25.2
 fastparquet==0.1.0
 arrow==0.10.0
+s3fs==0.0.9
