@@ -5,8 +5,8 @@ import time
 
 import boto3
 import pandas as pd
-import pyarrow as pa
-import pyarrow.parquet as pq
+import fastparquet as fp
+import s3fs
 
 logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger(__name__)
@@ -14,8 +14,9 @@ _logger = logging.getLogger(__name__)
 reload(sys)
 sys.setdefaultencoding('utf8')
 
+
 class AthenaClient(object):
-    def __init__(self, staging_dir, *args, **kwargs):
+    def __init__(self, staging_dir):
         self.staging_dir = staging_dir
         self.athena_client = boto3.client('athena')
         self.s3_client = boto3.client('s3')
@@ -91,45 +92,51 @@ class AthenaClient(object):
         query_execution_id = self.execute_raw_query(sql)
         self.__wait_for_query_results(query_execution_id)
 
-    def create_parquet(self, key, query, raw_columns, clean_columns=None):
+    def create_parquet(self, key, query, raw_columns=None, clean_columns=None):
         _logger.info('m=create_parquet, key={}, query={}, msg=querying on athena...'.format(key, query))
 
         data = self.execute_query_and_return_dataframe(query)
         data = data.astype(object).where(pd.notnull(data), None)
 
-        new_data = pd.DataFrame()
-        if raw_columns is not None:
+        if raw_columns is None:
+            new_data = data
+        else:
+            new_data = pd.DataFrame()
             for index, col_key in enumerate(raw_columns):
                 col, _type = col_key, raw_columns[col_key]
-                for row in xrange(data[col].shape[0]):
-                    data.loc[row, col] = _type(data.loc[row, col]) if data.loc[row, col] else None
 
-                    if clean_columns:
-                        list_clean_columns = clean_columns.keys()
-                        new_value = data.loc[row, col]
+                new_col = col if not clean_columns else clean_columns.keys()[index]
+                new_data[new_col] = pd.Series([self.__format_entry(_type(entry), clean_columns, index)
+                                               for entry in data.loc[:, col] if entry is not None])
 
-                        if type(clean_columns[list_clean_columns[index]]) == list:
-                            regex_from = clean_columns[list_clean_columns[index]][1]
-                            regex_to = clean_columns[list_clean_columns[index]][2]
-                            new_value = re.sub(regex_from, regex_to, _type(data.loc[row, col]))
+        self.__save_df_file_into_s3_as_parquet(df=new_data, bucket=self.staging_dir, file_path=key)
 
-                        new_data.loc[row, list_clean_columns[index]] = new_value if new_value else None
+    def __format_entry(self, entry, clean_columns, column_index):
+        if entry is None or clean_columns is None:
+            return entry
 
-        _logger.info('m=create_parquet, msg=creating parquet file')
-        table = pa.Table.from_pandas(df=new_data if clean_columns else data)
-        with pa.BufferOutputStream() as file_handler:
-            pq.write_table(table, file_handler)
+        list_clean_columns = clean_columns.keys()
+        new_type = clean_columns[list_clean_columns[column_index]]
+        if type(new_type) != list:
+            return new_type(entry)
 
-        _logger.info('m=create_parquet, msg=saving to s3')
-        self.s3_client.put_object(Bucket=self.staging_dir, Key=key, Body=file_handler.get_result().to_pybytes())
+        regex_from = clean_columns[list_clean_columns[column_index]][1]
+        regex_to = clean_columns[list_clean_columns[column_index]][2]
 
-        _logger.info('m=create_parquet, msg={} ready!'.format(key))
+        return new_type[0](re.sub(regex_from, regex_to, entry))
+
+    def __save_df_file_into_s3_as_parquet(self, df, bucket, file_path):
+        _logger.info('m=__save_df_file_into_s3_as_parquet')
+        s3_fs = s3fs.S3FileSystem()
+        fp.write('{}/{}'.format(bucket, file_path), df.where(df.notnull(), None), open_with=s3_fs.open)
+
+        _logger.info('m=__save_df_file_into_s3_as_parquet, msg={} ready!'.format(file_path))
 
     def create_athena_table_with_json_serde(self, database, table_name, schema, location, partitions=None,
                                             serde_options=None, drop_if_exists=True):
-        self._create_athena_table(database=database, table_name=table_name, schema=schema, location=location,
-                                  partitions=partitions, serde='org.openx.data.jsonserde.JsonSerDe',
-                                  serde_options=serde_options, drop_if_exists=drop_if_exists)
+        self.__create_athena_table(database=database, table_name=table_name, schema=schema, location=location,
+                                   partitions=partitions, serde='org.openx.data.jsonserde.JsonSerDe',
+                                   serde_options=serde_options, drop_if_exists=drop_if_exists)
 
     def __create_athena_table(self, database, table_name, schema, location, serde, partitions=None,
                               serde_options=None, drop_if_exists=True):
