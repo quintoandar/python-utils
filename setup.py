@@ -1,7 +1,7 @@
 from distutils.core import setup
 from pip.req import parse_requirements
 
-install_reqs = parse_requirements('requirements.txt', session='hack')
+install_reqs = [str(r.req) for r in parse_requirements('requirements.txt', session='hack')]
 
 setup(
     name='qa-python-utils',
