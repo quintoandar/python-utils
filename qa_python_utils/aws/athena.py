@@ -16,8 +16,8 @@ sys.setdefaultencoding('utf8')
 
 
 class AthenaClient(object):
-    def __init__(self, staging_dir):
-        self.staging_dir = staging_dir
+    def __init__(self, s3_bucket):
+        self.s3_bucket = s3_bucket
         self.athena_client = boto3.client('athena')
         self.s3_client = boto3.client('s3')
         self.bucket_folder_path = 'query_results'
@@ -43,7 +43,7 @@ class AthenaClient(object):
     def execute_raw_query(self, sql):
         _logger.info('m=execute_raw_query, sql={}'.format(sql))
 
-        s3_staging_dir = 's3://{}/{}/'.format(self.staging_dir, self.bucket_folder_path)
+        s3_staging_dir = 's3://{}/{}/'.format(self.s3_bucket, self.bucket_folder_path)
         response = self.athena_client.start_query_execution(
             QueryString=sql,
             ResultConfiguration={
@@ -57,11 +57,11 @@ class AthenaClient(object):
         _logger.info(
             'm=get_dataframe_from_query_execution_id, query_execution_id={0}, msg=getting object \'{0}\' from s3 folder path \'{1}/{2}\''.format(
                 query_execution_id,
-                self.staging_dir,
+                self.s3_bucket,
                 self.bucket_folder_path))
 
         self.__wait_for_query_results(query_execution_id, check_sleep_time)
-        return pd.read_csv('s3://{}/{}/{}.csv'.format(self.staging_dir, self.bucket_folder_path, query_execution_id), 
+        return pd.read_csv('s3://{}/{}/{}.csv'.format(self.s3_bucket, self.bucket_folder_path, query_execution_id), 
                            keep_default_na=False)
 
     def __wait_for_query_results(self, query_execution_id, check_sleep_time=2):
@@ -110,7 +110,7 @@ class AthenaClient(object):
                 new_data[new_col] = pd.Series([self.__format_entry(_type(entry), clean_columns, index)
                                                for entry in data.loc[:, col] if entry is not None])
 
-        self.__save_df_file_into_s3_as_parquet(df=new_data, bucket=self.staging_dir, file_path=key)
+        self.__save_df_file_into_s3_as_parquet(df=new_data, bucket=self.s3_bucket, file_path=key)
 
     def __format_entry(self, entry, clean_columns, column_index):
         if entry is None or clean_columns is None:
