@@ -1,4 +1,7 @@
 from distutils.core import setup
+from pip.req import parse_requirements
+
+install_reqs = parse_requirements('requirements.txt', session='hack')
 
 setup(
     name='qa-python-utils',
@@ -11,10 +14,5 @@ setup(
     author='Quinto Andar',
     author_email='enishime@quintoandar.com.br',
     description='Package for python utils',
-    install_requires=[
-        'google-api-python-client==1.6.2',
-        'oauth2client==4.1.0',
-        'httplib2shim==0.0.1',
-        'arrow==0.10.0']
-
+    install_requires=install_reqs
 )
