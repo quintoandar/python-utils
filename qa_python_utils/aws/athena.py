@@ -81,8 +81,11 @@ class AthenaClient(object):
 
         if query_execution_status in ('FAILED', 'CANCELLED'):
             raise Exception('status={}, time_elapsed={}, error_msg={}'.format(query_execution_status,
-                                                                                    time.time() - start_time,
-                                                                             query_execution['QueryExecution']['Status']['StateChangeReason']))
+                                                                              time.time() - start_time,
+                                                                              self.athena_client.get_query_execution(
+                                                                                  QueryExecutionId=query_execution_id)[
+                                                                                  'QueryExecution']['Status'][
+                                                                                  'StateChangeReason']))
 
     def __get_query_execution_status(self, query_execution_id):
         query_execution = self.athena_client.get_query_execution(QueryExecutionId=query_execution_id)
