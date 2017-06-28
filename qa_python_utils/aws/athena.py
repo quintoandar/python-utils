@@ -112,7 +112,7 @@ class AthenaClient(object):
 
                 new_col = col if not clean_columns else clean_columns.keys()[index]
                 new_data[new_col] = pd.Series([self.__format_entry(_type(entry), clean_columns, index)
-                                               for entry in data.loc[:, col] if entry is not None or entry != ''])
+                                               for entry in data.loc[:, col] if entry is not None and entry != ''])
 
         self.__save_df_file_into_s3_as_parquet(df=new_data, bucket=self.s3_bucket, file_path=key)
 
