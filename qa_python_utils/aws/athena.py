@@ -4,8 +4,8 @@ import sys
 import time
 
 import boto3
-import pandas as pd
 import fastparquet as fp
+import pandas as pd
 import s3fs
 
 logging.basicConfig(level=logging.INFO)
@@ -61,7 +61,7 @@ class AthenaClient(object):
                 self.bucket_folder_path))
 
         self.__wait_for_query_results(query_execution_id, check_sleep_time)
-        return pd.read_csv('s3://{}/{}/{}.csv'.format(self.s3_bucket, self.bucket_folder_path, query_execution_id), 
+        return pd.read_csv('s3://{}/{}/{}.csv'.format(self.s3_bucket, self.bucket_folder_path, query_execution_id),
                            keep_default_na=False)
 
     def __wait_for_query_results(self, query_execution_id, check_sleep_time=2):
@@ -111,8 +111,9 @@ class AthenaClient(object):
                 col, _type = col_key, raw_columns[col_key]
 
                 new_col = col if not clean_columns else clean_columns.keys()[index]
-                new_data[new_col] = pd.Series([self.__format_entry(_type(entry), clean_columns, index)
-                                               for entry in data.loc[:, col] if entry is not None and entry != ''])
+                new_data[new_col] = pd.Series([self.__format_entry(_type(entry), clean_columns,
+                                                                   index) if entry is not None and entry != '' else None
+                                               for entry in data.loc[:, col]])
 
         self.__save_df_file_into_s3_as_parquet(df=new_data, bucket=self.s3_bucket, file_path=key)
 
