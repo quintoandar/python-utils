@@ -96,6 +96,8 @@ class AthenaClient(object):
 
         query_execution_id = self.execute_raw_query(sql)
         self.__wait_for_query_results(query_execution_id)
+        
+        return query_execution_id
 
     def create_parquet(self, key, query, raw_columns=None, clean_columns=None):
         _logger.info('m=create_parquet, key={}, query={}, msg=querying on athena...'.format(key, query))
