@@ -99,25 +99,29 @@ class AthenaClient(object):
         
         return query_execution_id
 
-    def create_parquet(self, key, query, raw_columns=None, clean_columns=None):
-        _logger.info('m=create_parquet, key={}, query={}, msg=querying on athena...'.format(key, query))
+    def create_parquet_from_query(self, key, query, raw_columns=None, clean_columns=None):
+        _logger.info('m=create_parquet_from_query, key={}, query={}, msg=querying on athena...'.format(key, query))
 
-        data = self.execute_query_and_return_dataframe(query)
-        data = data.astype(object).where(pd.notnull(data), None)
+        df = self.execute_query_and_return_dataframe(query)
+        self.create_parquet_from_df(key, df, raw_columns, clean_columns)
+        
+    def create_parquet_from_df(self, key, df, raw_columns=None, clean_columns=None):
+        _logger.info('m=create_parquet_from_df')
 
+        df = df.astype(object).where(pd.notnull(df), None)
         if raw_columns is None:
-            new_data = data
+            new_df = df
         else:
-            new_data = pd.DataFrame()
+            new_df = pd.DataFrame()
             for index, col_key in enumerate(raw_columns):
                 col, _type = col_key, raw_columns[col_key]
 
                 new_col = col if not clean_columns else clean_columns.keys()[index]
-                new_data[new_col] = pd.Series([self.__format_entry(_type(entry), clean_columns,
+                new_df[new_col] = pd.Series([self.__format_entry(_type(entry), clean_columns,
                                                                    index) if entry is not None and entry != '' else None
-                                               for entry in data.loc[:, col]])
+                                               for entry in df.loc[:, col]])
 
-        self.__save_df_file_into_s3_as_parquet(df=new_data, bucket=self.s3_bucket, file_path=key)
+        self.__save_df_file_into_s3_as_parquet(df=new_df, bucket=self.s3_bucket, file_path=key)
 
     def __format_entry(self, entry, clean_columns, column_index):
         if entry is None or clean_columns is None:
@@ -163,12 +167,12 @@ class AthenaClient(object):
 
         query += """LOCATION '{}'""".format(location)
 
-        _logger.info('m=create_parquet, msg=Trying to create {}.{}...'.format(database, table_name))
+        _logger.info('m=__create_athena_table, msg=Trying to create {}.{}...'.format(database, table_name))
 
         self.execute_query_and_wait_for_results(query)
 
         _logger.info(
-            'm=create_parquet, msg=Table created! If it has partitions and you need them right now, run msck_repair_table function.')
+            'm=__create_athena_table, msg=Table created! If it has partitions and you need them right now, run msck_repair_table function.')
 
     def msck_repair_table(self, database, table_name):
         self.execute_query_and_wait_for_results("""MSCK REPAIR TABLE {}.{}""".format(database, table_name))
