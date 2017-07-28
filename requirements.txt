@@ -4,6 +4,7 @@ google-api-python-client==1.6.2
 oauth2client==4.1.0
 flake8==3.3.0
 httplib2shim==0.0.1
+numpy==1.13.0
 pandas==0.20.1
 Cython==0.25.2
 fastparquet==0.1.0
