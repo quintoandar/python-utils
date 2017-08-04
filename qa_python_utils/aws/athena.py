@@ -62,7 +62,7 @@ class AthenaClient(object):
 
         self.__wait_for_query_results(query_execution_id, check_sleep_time)
         return pd.read_csv('s3://{}/{}/{}.csv'.format(self.s3_bucket, self.bucket_folder_path, query_execution_id),
-                           keep_default_na=False)
+                           keep_default_na=False, dtype=object)
 
     def __wait_for_query_results(self, query_execution_id, check_sleep_time=2):
         _logger.info('m=__wait_for_query_results, query_execution_id={}, check_sleep_time={}'.format(query_execution_id,
