@@ -22,11 +22,11 @@ class AthenaClient(object):
         self.s3_client = boto3.client('s3')
         self.bucket_folder_path = 'query_results'
 
-    def execute_file_query(self, filename):
-        _logger.info('m=execute_file_query, filename={}'.format(filename))
+    def execute_file_query(self, filename, params=None):
+        _logger.info('m=execute_file_query, filename={}, params={}'.format(filename, params))
 
         with open(filename) as f:
-            return self.execute_raw_query(sql=f.read())
+            return self.execute_raw_query(sql=f.read() if not params or len(params) == 0 else f.read().format(*params))
 
     def execute_file_query_and_return_dataframe(self, filename):
         _logger.info('m=execute_file_query_and_return_dataframe, filename={}'.format(filename))
