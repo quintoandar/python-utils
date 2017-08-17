@@ -28,10 +28,10 @@ class AthenaClient(object):
         with open(filename) as f:
             return self.execute_raw_query(sql=f.read() if not params or len(params) == 0 else f.read().format(*params))
 
-    def execute_file_query_and_return_dataframe(self, filename):
-        _logger.info('m=execute_file_query_and_return_dataframe, filename={}'.format(filename))
+    def execute_file_query_and_return_dataframe(self, filename, params=None):
+        _logger.info('m=execute_file_query_and_return_dataframe, filename={}, params={}'.format(filename, params))
 
-        query_execution_id = self.execute_file_query(filename)
+        query_execution_id = self.execute_file_query(filename, params)
         return self.get_dataframe_from_query_execution_id(query_execution_id)
 
     def execute_query_and_return_dataframe(self, sql):
