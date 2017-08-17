@@ -96,7 +96,7 @@ class AthenaClient(object):
 
         query_execution_id = self.execute_raw_query(sql)
         self.__wait_for_query_results(query_execution_id)
-        
+
         return query_execution_id
 
     def create_parquet_from_query(self, key, query, raw_columns=None, clean_columns=None):
@@ -104,7 +104,7 @@ class AthenaClient(object):
 
         df = self.execute_query_and_return_dataframe(query)
         self.create_parquet_from_df(key, df, raw_columns, clean_columns)
-        
+
     def create_parquet_from_df(self, key, df, raw_columns=None, clean_columns=None):
         _logger.info('m=create_parquet_from_df')
 
@@ -118,8 +118,8 @@ class AthenaClient(object):
 
                 new_col = col if not clean_columns else clean_columns.keys()[index]
                 new_df[new_col] = pd.Series([self.__format_entry(_type(entry), clean_columns,
-                                                                   index) if entry is not None and entry != '' else None
-                                               for entry in df.loc[:, col]])
+                                                                 index) if entry is not None and entry != '' else None
+                                             for entry in df.loc[:, col]])
 
         self.__save_df_file_into_s3_as_parquet(df=new_df, bucket=self.s3_bucket, file_path=key)
 
@@ -176,6 +176,27 @@ class AthenaClient(object):
 
     def msck_repair_table(self, database, table_name):
         self.execute_query_and_wait_for_results("""MSCK REPAIR TABLE {}.{}""".format(database, table_name))
+
+    def upsert_single_partition(self, bucket_folder_path, database, table, partition_name, partition_value):
+        _logger.info(
+            'm=update_partitions, bucket_folder_path={}, database={}, table={}, partition_name={}, partition_value={}'.format(
+                bucket_folder_path,
+                database,
+                table,
+                partition_name,
+                partition_value))
+
+        drop_stmt = """ALTER TABLE {0}.{1} 
+                        DROP IF EXISTS PARTITION ({2}='{3}')""".format(database, table, partition_name, partition_value)
+
+        self.execute_query_and_wait_for_results(sql=drop_stmt)
+
+        add_stmt = """ALTER TABLE {0}.{1} 
+                       ADD IF NOT EXISTS PARTITION ({2}='{3}')
+                       LOCATION 's3://{4}/{2}={3}'""".format(database, table, partition_name, partition_value,
+                                                             bucket_folder_path)
+
+        self.execute_query_and_wait_for_results(sql=add_stmt)
 
     def update_partitions(self, table, location):
         # An alternative approach would be to simply use an
