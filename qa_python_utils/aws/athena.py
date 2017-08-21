@@ -22,16 +22,19 @@ class AthenaClient(object):
         self.s3_client = boto3.client('s3')
         self.bucket_folder_path = 'query_results'
 
-    def execute_file_query(self, filename, params=None):
-        _logger.info('m=execute_file_query, filename={}, params={}'.format(filename, params))
+    def execute_file_query(self, filename, *params):
+        _logger.info('m=execute_file_query, filename={}, params={}'.format(filename, *params))
 
         with open(filename) as f:
-            return self.execute_raw_query(sql=f.read() if not params or len(params) == 0 else f.read().format(*params))
+            sql = f.read()
+            if params:
+                sql = sql.format(*params)
+            return self.execute_raw_query(sql=sql)
 
-    def execute_file_query_and_return_dataframe(self, filename, params=None):
-        _logger.info('m=execute_file_query_and_return_dataframe, filename={}, params={}'.format(filename, params))
+    def execute_file_query_and_return_dataframe(self, filename, *params):
+        _logger.info('m=execute_file_query_and_return_dataframe, filename={}, params={}'.format(filename, *params))
 
-        query_execution_id = self.execute_file_query(filename, params)
+        query_execution_id = self.execute_file_query(filename, *params)
         return self.get_dataframe_from_query_execution_id(query_execution_id)
 
     def execute_query_and_return_dataframe(self, sql):
