@@ -27,26 +27,26 @@ class AthenaClient(object):
 
         with open(filename) as f:
             sql = f.read()
-            if params:
-                sql = sql.format(params)
-            return self.execute_raw_query(sql=sql)
+            return self.execute_raw_query(sql, *params)
 
     def execute_file_query_and_return_dataframe(self, filename, *params):
         _logger.info('m=execute_file_query_and_return_dataframe, filename={}, params={}'.format(filename, params))
 
-        query_execution_id = self.execute_file_query(filename, params)
+        query_execution_id = self.execute_file_query(filename, *params)
         return self.get_dataframe_from_query_execution_id(query_execution_id)
 
-    def execute_query_and_return_dataframe(self, sql):
-        _logger.info('m=execute_query_and_return_dataframe, sql={}'.format(sql))
+    def execute_query_and_return_dataframe(self, sql, *params):
+        _logger.info('m=execute_query_and_return_dataframe, sql={}, params={}'.format(sql, params))
 
-        query_execution_id = self.execute_raw_query(sql)
+        query_execution_id = self.execute_raw_query(sql, *params)
         return self.get_dataframe_from_query_execution_id(query_execution_id)
 
-    def execute_raw_query(self, sql):
-        _logger.info('m=execute_raw_query, sql={}'.format(sql))
+    def execute_raw_query(self, sql, *params):
+        _logger.info('m=execute_raw_query, sql={}, params={}'.format(sql, params))
 
         s3_staging_dir = 's3://{}/{}/'.format(self.s3_bucket, self.bucket_folder_path)
+        if params:
+            sql = sql.format(*params)
         response = self.athena_client.start_query_execution(
             QueryString=sql,
             ResultConfiguration={
@@ -94,10 +94,10 @@ class AthenaClient(object):
         query_execution = self.athena_client.get_query_execution(QueryExecutionId=query_execution_id)
         return query_execution['QueryExecution']['Status']['State']
 
-    def execute_query_and_wait_for_results(self, sql):
-        _logger.info('m=execute_query_and_wait_for_results, sql={}'.format(sql))
+    def execute_query_and_wait_for_results(self, sql, *params):
+        _logger.info('m=execute_query_and_wait_for_results, sql={}, params={}'.format(sql, params))
 
-        query_execution_id = self.execute_raw_query(sql)
+        query_execution_id = self.execute_raw_query(sql, *params)
         self.__wait_for_query_results(query_execution_id)
 
         return query_execution_id
