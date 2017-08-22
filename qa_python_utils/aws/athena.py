@@ -23,18 +23,18 @@ class AthenaClient(object):
         self.bucket_folder_path = 'query_results'
 
     def execute_file_query(self, filename, *params):
-        _logger.info('m=execute_file_query, filename={}, params={}'.format(filename, *params))
+        _logger.info('m=execute_file_query, filename={}, params={}'.format(filename, params))
 
         with open(filename) as f:
             sql = f.read()
             if params:
-                sql = sql.format(*params)
+                sql = sql.format(params)
             return self.execute_raw_query(sql=sql)
 
     def execute_file_query_and_return_dataframe(self, filename, *params):
-        _logger.info('m=execute_file_query_and_return_dataframe, filename={}, params={}'.format(filename, *params))
+        _logger.info('m=execute_file_query_and_return_dataframe, filename={}, params={}'.format(filename, params))
 
-        query_execution_id = self.execute_file_query(filename, *params)
+        query_execution_id = self.execute_file_query(filename, params)
         return self.get_dataframe_from_query_execution_id(query_execution_id)
 
     def execute_query_and_return_dataframe(self, sql):
