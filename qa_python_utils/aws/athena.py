@@ -201,6 +201,14 @@ class AthenaClient(object):
 
         self.execute_query_and_wait_for_results(sql=add_stmt)
 
+    def add_partition(self, database, table_name, partition):
+        sql = 'ALTER TABLE {}.{} ADD IF NOT EXISTS PARTITION ({});'.format(
+            database,
+            table_name,
+            partition
+        )
+        AthenaClient(self.s3_bucket).execute_raw_query(sql=sql)
+
     def update_partitions(self, table, location):
         # An alternative approach would be to simply use an
         # "msck repair table fastly" statement but this is very slow at Athena.
