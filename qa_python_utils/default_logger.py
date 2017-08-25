@@ -11,10 +11,10 @@ def logger(func):
         if args and len(args) > 1:
             complete_args = ''
             for index, arg in enumerate(args):
-                if index == 0 or 'self' in str(arg):
-                    continue
-
                 arg_name = func.__code__.co_varnames[index]
+                if 'self' in arg_name:
+                    continue
+                    
                 complete_args += '{}={}, '.format(arg_name, arg)
 
             if len(complete_args) > 0:
