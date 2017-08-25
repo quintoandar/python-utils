@@ -35,11 +35,11 @@ class AthenaClient(object):
         query_execution_id = self.execute_file_query(filename, *params)
         return self.get_dataframe_from_query_execution_id(query_execution_id)
 
-    def execute_query_and_return_dataframe(self, sql, *params):
-        _logger.info('m=execute_query_and_return_dataframe, sql={}, params={}'.format(sql, params))
+    def execute_query_and_return_dataframe(self, sql, file_ext='csv', *params):
+        _logger.info('m=execute_query_and_return_dataframe, sql={}, file_ext={}, params={}'.format(sql, file_ext, params))
 
         query_execution_id = self.execute_raw_query(sql, *params)
-        return self.get_dataframe_from_query_execution_id(query_execution_id)
+        return self.get_dataframe_from_query_execution_id(query_execution_id, file_ext)
 
     def execute_raw_query(self, sql, *params):
         _logger.info('m=execute_raw_query, sql={}, params={}'.format(sql, params))
@@ -56,15 +56,16 @@ class AthenaClient(object):
 
         return response['QueryExecutionId']
 
-    def get_dataframe_from_query_execution_id(self, query_execution_id, check_sleep_time=2):
+    def get_dataframe_from_query_execution_id(self, query_execution_id, check_sleep_time=2, file_ext='csv'):
         _logger.info(
-            'm=get_dataframe_from_query_execution_id, query_execution_id={0}, msg=getting object \'{0}\' from s3 folder path \'{1}/{2}\''.format(
+            'm=get_dataframe_from_query_execution_id, query_execution_id={0}, file_ext={3}, msg=getting object \'{0}\' from s3 folder path \'{1}/{2}\''.format(
                 query_execution_id,
                 self.s3_bucket,
-                self.bucket_folder_path))
+                self.bucket_folder_path,
+                file_ext))
 
         self.__wait_for_query_results(query_execution_id, check_sleep_time)
-        return pd.read_csv('s3://{}/{}/{}.csv'.format(self.s3_bucket, self.bucket_folder_path, query_execution_id),
+        return pd.read_csv('s3://{0}/{1}/{2}.{3}'.format(self.s3_bucket, self.bucket_folder_path, query_execution_id, file_ext),
                            keep_default_na=False, dtype=object)
 
     def __wait_for_query_results(self, query_execution_id, check_sleep_time=2):
