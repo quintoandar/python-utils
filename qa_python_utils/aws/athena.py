@@ -35,12 +35,18 @@ class AthenaClient(object):
         query_execution_id = self.execute_file_query(filename, *params)
         return self.get_dataframe_from_query_execution_id(query_execution_id)
 
-    def execute_query_and_return_dataframe(self, sql, file_ext='csv', *params):
-        _logger.info('m=execute_query_and_return_dataframe, sql={}, file_ext={}, params={}'.format(sql, file_ext, params))
+    def execute_query_and_return_dataframe(self, sql, *params):
+        _logger.info('m=execute_query_and_return_dataframe, sql={}, params={}'.format(sql, params))
 
         query_execution_id = self.execute_raw_query(sql, *params)
-        return self.get_dataframe_from_query_execution_id(query_execution_id=query_execution_id, file_ext=file_ext)
+        return self.get_dataframe_from_query_execution_id(query_execution_id=query_execution_id, file_ext='csv')
 
+    def execute_txt_query_and_return_dataframe(self, sql, *params):
+        _logger.info('m=execute_txt_query_and_return_dataframe, sql={}, params={}'.format(sql, params))
+
+        query_execution_id = self.execute_raw_query(sql, *params)
+        return self.get_dataframe_from_query_execution_id(query_execution_id=query_execution_id, file_ext='txt')
+        
     def execute_raw_query(self, sql, *params):
         _logger.info('m=execute_raw_query, sql={}, params={}'.format(sql, params))
 
