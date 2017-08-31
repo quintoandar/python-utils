@@ -208,6 +208,19 @@ class AthenaClient(object):
 
         self.execute_query_and_wait_for_results(sql=add_stmt)
 
+    def drop_single_partition(self, bucket_folder_path, database, table, partition_name, partition_value):
+        _logger.info(
+            'm=drop_single_partitions, bucket_folder_path={}, database={}, table={}, partition_name={}, partition_value={}'.format(
+                bucket_folder_path,
+                database,
+                table,
+                partition_name,
+                partition_value))
+
+        drop_stmt = """ALTER TABLE {0}.{1} 
+                        DROP IF EXISTS PARTITION ({2}='{3}')""".format(database, table, partition_name, partition_value)
+        self.execute_query_and_wait_for_results(sql=drop_stmt)
+        
     def add_partition(self, database, table_name, partition):
         sql = 'ALTER TABLE {}.{} ADD IF NOT EXISTS PARTITION ({});'.format(
             database,
