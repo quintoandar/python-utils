@@ -7,49 +7,43 @@ import boto3
 import fastparquet as fp
 import pandas as pd
 import s3fs
-
-logging.basicConfig(level=logging.INFO)
-_logger = logging.getLogger(__name__)
+from qa_python_utils.default_logger import logger, _logger
 
 reload(sys)
 sys.setdefaultencoding('utf8')
 
 
 class AthenaClient(object):
+    @logger
     def __init__(self, s3_bucket):
         self.s3_bucket = s3_bucket
         self.athena_client = boto3.client('athena')
         self.s3_client = boto3.client('s3')
         self.bucket_folder_path = 'query_results'
 
+    @logger
     def execute_file_query(self, filename, *params):
-        _logger.info('m=execute_file_query, filename={}, params={}'.format(filename, params))
-
         with open(filename) as f:
             sql = f.read()
             return self.execute_raw_query(sql, *params)
 
+    @logger
     def execute_file_query_and_return_dataframe(self, filename, *params):
-        _logger.info('m=execute_file_query_and_return_dataframe, filename={}, params={}'.format(filename, params))
-
         query_execution_id = self.execute_file_query(filename, *params)
         return self.get_dataframe_from_query_execution_id(query_execution_id)
 
+    @logger
     def execute_query_and_return_dataframe(self, sql, *params):
-        _logger.info('m=execute_query_and_return_dataframe, sql={}, params={}'.format(sql, params))
-
         query_execution_id = self.execute_raw_query(sql, *params)
         return self.get_dataframe_from_query_execution_id(query_execution_id=query_execution_id, file_ext='csv')
 
+    @logger
     def execute_txt_query_and_return_dataframe(self, sql, *params):
-        _logger.info('m=execute_txt_query_and_return_dataframe, sql={}, params={}'.format(sql, params))
-
         query_execution_id = self.execute_raw_query(sql, *params)
         return self.get_dataframe_from_query_execution_id(query_execution_id=query_execution_id, file_ext='txt')
-        
-    def execute_raw_query(self, sql, *params):
-        _logger.info('m=execute_raw_query, sql={}, params={}'.format(sql, params))
 
+    @logger
+    def execute_raw_query(self, sql, *params):
         s3_staging_dir = 's3://{}/{}/'.format(self.s3_bucket, self.bucket_folder_path)
         if params:
             sql = sql.format(*params)
@@ -62,22 +56,14 @@ class AthenaClient(object):
 
         return response['QueryExecutionId']
 
+    @logger
     def get_dataframe_from_query_execution_id(self, query_execution_id, check_sleep_time=2, file_ext='csv'):
-        _logger.info(
-            'm=get_dataframe_from_query_execution_id, query_execution_id={0}, file_ext={3}, msg=getting object \'{0}\' from s3 folder path \'{1}/{2}\''.format(
-                query_execution_id,
-                self.s3_bucket,
-                self.bucket_folder_path,
-                file_ext))
-
         self.__wait_for_query_results(query_execution_id, check_sleep_time)
         return pd.read_csv('s3://{0}/{1}/{2}.{3}'.format(self.s3_bucket, self.bucket_folder_path, query_execution_id, file_ext),
                            keep_default_na=False, dtype=object, sep='\t' if file_ext == 'txt' else ',', header=-1 if file_ext == 'txt' else 'infer')
 
+    @logger
     def __wait_for_query_results(self, query_execution_id, check_sleep_time=2):
-        _logger.info('m=__wait_for_query_results, query_execution_id={}, check_sleep_time={}'.format(query_execution_id,
-                                                                                                     check_sleep_time))
-
         query_execution_status = self.__get_query_execution_status(query_execution_id)
         start_time = time.time()
         while query_execution_status in ('QUEUED', 'RUNNING'):
@@ -97,21 +83,27 @@ class AthenaClient(object):
                                                                                   'QueryExecution']['Status'][
                                                                                   'StateChangeReason']))
 
+    @logger
     def __get_query_execution_status(self, query_execution_id):
         query_execution = self.athena_client.get_query_execution(QueryExecutionId=query_execution_id)
         return query_execution['QueryExecution']['Status']['State']
 
+    @logger
     def execute_query_and_wait_for_results(self, sql, *params):
-        _logger.info('m=execute_query_and_wait_for_results, sql={}, params={}'.format(sql, params))
-
         query_execution_id = self.execute_raw_query(sql, *params)
         self.__wait_for_query_results(query_execution_id)
 
         return query_execution_id
 
-    def create_parquet_from_query(self, key, query, raw_columns=None, clean_columns=None):
-        _logger.info('m=create_parquet_from_query, key={}, query={}, msg=querying on athena...'.format(key, query))
+    @logger
+    def execute_file_query_and_wait_for_results(self, filename, *params):
+        query_execution_id = self.execute_file_query(filename, *params)
+        self.__wait_for_query_results(query_execution_id)
 
+        return query_execution_id
+
+    @logger
+    def create_parquet_from_query(self, key, query, raw_columns=None, clean_columns=None):
         df = self.execute_query_and_return_dataframe(query)
         self.create_parquet_from_df(key, df, raw_columns, clean_columns)
 
@@ -187,15 +179,8 @@ class AthenaClient(object):
     def msck_repair_table(self, database, table_name):
         self.execute_query_and_wait_for_results("""MSCK REPAIR TABLE {}.{}""".format(database, table_name))
 
+    @logger
     def upsert_single_partition(self, bucket_folder_path, database, table, partition_name, partition_value):
-        _logger.info(
-            'm=update_partitions, bucket_folder_path={}, database={}, table={}, partition_name={}, partition_value={}'.format(
-                bucket_folder_path,
-                database,
-                table,
-                partition_name,
-                partition_value))
-
         drop_stmt = """ALTER TABLE {0}.{1} 
                         DROP IF EXISTS PARTITION ({2}='{3}')""".format(database, table, partition_name, partition_value)
 
@@ -208,19 +193,13 @@ class AthenaClient(object):
 
         self.execute_query_and_wait_for_results(sql=add_stmt)
 
+    @logger
     def drop_single_partition(self, bucket_folder_path, database, table, partition_name, partition_value):
-        _logger.info(
-            'm=drop_single_partitions, bucket_folder_path={}, database={}, table={}, partition_name={}, partition_value={}'.format(
-                bucket_folder_path,
-                database,
-                table,
-                partition_name,
-                partition_value))
-
         drop_stmt = """ALTER TABLE {0}.{1} 
                         DROP IF EXISTS PARTITION ({2}='{3}')""".format(database, table, partition_name, partition_value)
         self.execute_query_and_wait_for_results(sql=drop_stmt)
-        
+
+    @logger
     def add_partition(self, database, table_name, partition):
         sql = 'ALTER TABLE {}.{} ADD IF NOT EXISTS PARTITION ({});'.format(
             database,
