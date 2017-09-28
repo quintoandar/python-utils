@@ -21,7 +21,6 @@ class AthenaClient(object):
         self.s3_client = boto3.client('s3')
         self.bucket_folder_path = 'query_results'
 
-    @logger
     def execute_file_query(self, filename, *params):
         with open(filename) as f:
             sql = f.read()
