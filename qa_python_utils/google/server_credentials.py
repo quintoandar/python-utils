@@ -1,7 +1,12 @@
 from __future__ import print_function
-from oauth2client.service_account import ServiceAccountCredentials
-import os
+
 import json
+import os
+import logging
+
+log = logging.getLogger(__name__)
+
+from oauth2client.service_account import ServiceAccountCredentials
 
 SCOPES = ['https://www.googleapis.com/auth/drive',
           'https://www.googleapis.com/auth/drive.appdata',
@@ -10,7 +15,16 @@ SCOPES = ['https://www.googleapis.com/auth/drive',
           'https://www.googleapis.com/auth/drive.metadata.readonly',
           'https://www.googleapis.com/auth/drive.photos.readonly',
           'https://www.googleapis.com/auth/drive.readonly']
-CREDENTIALS_JSON = os.getenv('QA_PYTHON_UTILS_CREDENTIALS_JSON', os.getenv('CREDENTIALS_JSON'))  # noqa
+
+CREDENTIALS_JSON = None
+try:
+    with open(os.getenv('QA_PYTHON_UTILS_CREDENTIALS_JSON', os.getenv('CREDENTIALS_JSON')),
+              'r') as content_file:  # noqa
+        CREDENTIALS_JSON = content_file.read()
+except:
+    log.exception("Problem reading QA_PYTHON_UTILS_CREDENTIALS_JSON from file.")
+    if CREDENTIALS_JSON is None:
+        CREDENTIALS_JSON = os.getenv('QA_PYTHON_UTILS_CREDENTIALS_JSON', os.getenv('CREDENTIALS_JSON'))
 
 
 def get_credentials():
