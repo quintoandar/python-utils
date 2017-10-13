@@ -21,7 +21,12 @@ def logger(func=None, exclude=None):
     :param exclude: param names to be excluded in the logging string
     :return: complete logging string
     """
-    if func is not None:
+    if func is None:
+        def partial_wrapper(func):
+            return logger(func, exclude)
+
+        return partial_wrapper
+    else:
         def _wrapper(*args, **kwargs):
             logging_string = 'm={}'
 
@@ -63,8 +68,3 @@ def logger(func=None, exclude=None):
                 raise
 
         return _wrapper
-    else:
-        def partial_wrapper(func):
-            return logger(func, exclude)
-
-        return partial_wrapper
