@@ -184,7 +184,14 @@ class AthenaClient(object):
         drop_stmt = """ALTER TABLE {0}.{1} 
                         DROP IF EXISTS PARTITION ({2}='{3}')""".format(database, table, partition_name, partition_value)
 
-        self.execute_query_and_wait_for_results(sql=drop_stmt)
+        try:
+            self.execute_query_and_wait_for_results(sql=drop_stmt)
+        except Exception:
+            _logger.warn('m=upsert_single_partition, bucket_folder_path={}, database={}, table={}, partition_name={}, '
+                         'partition_value={}, msg=exception raised while deleting partition'.format(bucket_folder_path, 
+                                                                                                    database, table, 
+                                                                                                    partition_name, 
+                                                                                                    partition_value))
 
         add_stmt = """ALTER TABLE {0}.{1} 
                        ADD IF NOT EXISTS PARTITION ({2}='{3}')
