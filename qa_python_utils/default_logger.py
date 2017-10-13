@@ -4,24 +4,24 @@ logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger('logger')
 
 
-def logger(exclude=None):
+def logger(func=None, exclude=None):
     """
     Usage:
         @logger
         def some_function([cls, self, None], x, y):
             pass
-        
+
         @logger(exclude='x')
         def some_function(x, y):
             pass
-            
+
         @logger(exclude=['x', 'y']):
             pass
+    :param func: function to be logged
     :param exclude: param names to be excluded in the logging string
     :return: complete logging string
     """
-    
-    def _logger_func(func):
+    if func is not None:
         def _wrapper(*args, **kwargs):
             logging_string = 'm={}'
 
@@ -38,8 +38,9 @@ def logger(exclude=None):
                         continue
 
                     complete_args += ('*{}=({}, ' if len(args) > func.__code__.co_argcount
-                                                     and index >= func.__code__.co_argcount else '{}={}, ').format(arg_name,
-                                                                                                                   arg)
+                                                     and index >= func.__code__.co_argcount else '{}={}, ').format(
+                        arg_name,
+                        arg)
 
                 if len(complete_args) > 0 and not has_multiple_params:
                     complete_args = complete_args[:-2]
@@ -62,4 +63,8 @@ def logger(exclude=None):
                 raise
 
         return _wrapper
-    return _logger_func
+    else:
+        def partial_wrapper(func):
+            return logger(func, exclude)
+
+        return partial_wrapper
