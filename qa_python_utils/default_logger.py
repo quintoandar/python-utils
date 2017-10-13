@@ -10,14 +10,21 @@ def logger(func):
 
         if args and len(args) > 1:
             complete_args = ''
+            has_params_pointer = len(func.__code__.co_varnames) < len(args)
             for index, arg in enumerate(args):
+                if index >= len(func.__code__.co_varnames):
+                    complete_args += ('{})' if index == len(args) - 1 else '{}, ').format(arg)
+                    continue
+
                 arg_name = func.__code__.co_varnames[index]
                 if 'self' in arg_name:
                     continue
-                    
-                complete_args += '{}={}, '.format(arg_name, arg)
 
-            if len(complete_args) > 0:
+                complete_args += ('*{}=({}, ' if len(args) > func.__code__.co_argcount
+                                                 and index >= func.__code__.co_argcount else '{}={}, ').format(arg_name,
+                                                                                                               arg)
+
+            if len(complete_args) > 0 and not has_params_pointer:
                 complete_args = complete_args[:-2]
 
             logging_string += ', {}'.format(complete_args)
