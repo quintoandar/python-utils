@@ -34,7 +34,7 @@ def logger(exclude=None):
                         continue
 
                     arg_name = func.__code__.co_varnames[index]
-                    if 'self' in arg_name or arg_name in exclude:
+                    if 'self' in arg_name or (exclude and arg_name in exclude):
                         continue
 
                     complete_args += ('*{}=({}, ' if len(args) > func.__code__.co_argcount
