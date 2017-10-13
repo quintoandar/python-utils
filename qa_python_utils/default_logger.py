@@ -26,8 +26,7 @@ def logger(func):
 
             if len(complete_args) > 0 and not has_multiple_params:
                 complete_args = complete_args[:-2]
-                if len(args) > func.__code__.co_argcount:
-                    complete_args += ')'
+                complete_args += ')' if len(args) > func.__code__.co_argcount else ''
 
             logging_string += ', {}'.format(complete_args)
 
