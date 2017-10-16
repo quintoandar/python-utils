@@ -25,7 +25,7 @@ class Drive(object):
         """
         self.credentials = google_credentials.get_credentials()
         self.http = self.credentials.authorize(httplib2shim.Http())
-        self.service = discovery.build('drive', 'v3', http=self.http, cache_discovery=false)
+        self.service = discovery.build('drive', 'v3', http=self.http, cache_discovery=False)
 
     def refresh(self):  # pragma: no cover
         self.credentials.refresh(self.http)
