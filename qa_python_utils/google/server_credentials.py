@@ -21,10 +21,12 @@ try:
     with open(os.getenv('QA_PYTHON_UTILS_CREDENTIALS_JSON', os.getenv('CREDENTIALS_JSON')),
               'r') as content_file:  # noqa
         CREDENTIALS_JSON = content_file.read()
-except:
-    log.exception("Problem reading QA_PYTHON_UTILS_CREDENTIALS_JSON from file.")
+except Exception:
+    log.info("Problem reading QA_PYTHON_UTILS_CREDENTIALS_JSON from file using content as is.")
     if CREDENTIALS_JSON is None:
         CREDENTIALS_JSON = os.getenv('QA_PYTHON_UTILS_CREDENTIALS_JSON', os.getenv('CREDENTIALS_JSON'))
+
+log.info("Using CREDENTIALS_JSON: {}".format(CREDENTIALS_JSON))
 
 
 def get_credentials():
