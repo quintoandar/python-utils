@@ -1,4 +1,5 @@
 import logging
+import re
 
 logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger('logger')
@@ -28,7 +29,7 @@ def logger(func=None, exclude=None):
         return partial_wrapper
     else:
         def _wrapper(*args, **kwargs):
-            logging_string = 'm={}'
+            logging_string = ''
 
             if args and len(args) > 1:
                 complete_args = ''
@@ -60,6 +61,8 @@ def logger(func=None, exclude=None):
             if (not args or len(args) <= 1) and (not kwargs and len(kwargs) <= 0):
                 logging_string += ', msg=init'
 
+            logging_string_suffix = re.sub(pattern=r"=( )?'?{(\d+)?}'?", repl=r"='?{}_p_index'?", string=logging_string)
+            logging_string = 'm={}' + logging_string_suffix
             _logger.info(logging_string.format(func.__name__, kwargs))
             try:
                 return func(*args, **kwargs)
