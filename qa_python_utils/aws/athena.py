@@ -32,18 +32,21 @@ class AthenaClient(object):
         query_execution_id = self.execute_file_query(filename, *params)
         return self.get_dataframe_from_query_execution_id(query_execution_id)
 
-    @logger
     def execute_query_and_return_dataframe(self, sql, *params):
+        _logger.info('m=execute_query_and_return_dataframe, sql={}, *params={}'.format(sql, params))
+        
         query_execution_id = self.execute_raw_query(sql, *params)
         return self.get_dataframe_from_query_execution_id(query_execution_id=query_execution_id, file_ext='csv')
 
-    @logger
     def execute_txt_query_and_return_dataframe(self, sql, *params):
+        _logger.info('m=execute_txt_query_and_return_dataframe, sql={}, *params={}'.format(sql, params))
+        
         query_execution_id = self.execute_raw_query(sql, *params)
         return self.get_dataframe_from_query_execution_id(query_execution_id=query_execution_id, file_ext='txt')
 
-    @logger
     def execute_raw_query(self, sql, *params):
+        _logger.info('m=execute_raw_query, sql={}, *params={}'.format(sql, params))
+        
         s3_staging_dir = 's3://{}/{}/'.format(self.s3_bucket, self.bucket_folder_path)
         if params:
             sql = sql.format(*params)
@@ -88,8 +91,9 @@ class AthenaClient(object):
         query_execution = self.athena_client.get_query_execution(QueryExecutionId=query_execution_id)
         return query_execution['QueryExecution']['Status']['State']
 
-    @logger
     def execute_query_and_wait_for_results(self, sql, *params):
+        _logger.info('m=execute_query_and_wait_for_results, sql={}, *params={}'.format(sql, params))
+        
         query_execution_id = self.execute_raw_query(sql, *params)
         self.__wait_for_query_results(query_execution_id)
 
@@ -102,8 +106,9 @@ class AthenaClient(object):
 
         return query_execution_id
 
-    @logger
     def create_parquet_from_query(self, key, query, raw_columns=None, clean_columns=None):
+        _logger.info('m=create_parquet_from_query, key={}, query={}'.format(key, query))
+        
         df = self.execute_query_and_return_dataframe(query)
         self.create_parquet_from_df(key, df, raw_columns, clean_columns)
 
