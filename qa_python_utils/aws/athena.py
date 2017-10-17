@@ -45,8 +45,6 @@ class AthenaClient(object):
         return self.get_dataframe_from_query_execution_id(query_execution_id=query_execution_id, file_ext='txt')
 
     def execute_raw_query(self, sql, *params):
-        _logger.info('m=execute_raw_query, sql={}, *params={}'.format(sql, params))
-        
         s3_staging_dir = 's3://{}/{}/'.format(self.s3_bucket, self.bucket_folder_path)
         if params:
             sql = sql.format(*params)
