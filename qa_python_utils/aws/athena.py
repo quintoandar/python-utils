@@ -30,7 +30,7 @@ class AthenaClient(object):
     @logger
     def execute_file_query(self, filename, *params):
         path_prefix = self.__get_caller_full_path()
-        with open('{}/{}'.format(path_prefix, filename)) as f:
+        with open('{}'.format(filename)) as f:
             sql = f.read()
             return self.execute_raw_query(sql, *params)
 
