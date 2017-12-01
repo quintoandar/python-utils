@@ -21,16 +21,9 @@ class AthenaClient(object):
         self.s3_client = boto3.client('s3')
         self.bucket_folder_path = 'query_results'
 
-    @classmethod
-    def __get_caller_full_path(cls):
-        frame = inspect.stack()[len(inspect.stack()) - 1]
-        module = inspect.getmodule(frame[0])
-        return module.__file__[:-3]
-
     @logger
     def execute_file_query(self, filename, *params):
-        path_prefix = self.__get_caller_full_path()
-        with open('{}'.format(filename)) as f:
+        with open(filename) as f:
             sql = f.read()
             return self.execute_raw_query(sql, *params)
 
