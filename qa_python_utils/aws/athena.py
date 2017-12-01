@@ -1,4 +1,4 @@
-import logging
+import inspect
 import re
 import sys
 import time
@@ -21,9 +21,16 @@ class AthenaClient(object):
         self.s3_client = boto3.client('s3')
         self.bucket_folder_path = 'query_results'
 
+    @classmethod
+    def __get_caller_full_path(cls):
+        frame = inspect.stack()[len(inspect.stack()) - 1]
+        module = inspect.getmodule(frame[0])
+        return module.__file__[:-3]
+
     @logger
     def execute_file_query(self, filename, *params):
-        with open(filename) as f:
+        path_prefix = self.__get_caller_full_path()
+        with open('{}/{}'.format(path_prefix, filename)) as f:
             sql = f.read()
             return self.execute_raw_query(sql, *params)
 
@@ -34,19 +41,19 @@ class AthenaClient(object):
 
     def execute_query_and_return_dataframe(self, sql, *params):
         _logger.info('m=execute_query_and_return_dataframe, sql={}, *params={}'.format(sql, params))
-        
+
         query_execution_id = self.execute_raw_query(sql, *params)
         return self.get_dataframe_from_query_execution_id(query_execution_id=query_execution_id, file_ext='csv')
 
     def execute_txt_query_and_return_dataframe(self, sql, *params):
         _logger.info('m=execute_txt_query_and_return_dataframe, sql={}, *params={}'.format(sql, params))
-        
+
         query_execution_id = self.execute_raw_query(sql, *params)
         return self.get_dataframe_from_query_execution_id(query_execution_id=query_execution_id, file_ext='txt')
 
     def execute_raw_query(self, sql, *params):
         _logger.info('m=execute_raw_query, sql={}, *params={}'.format(sql, params))
-        
+
         s3_staging_dir = 's3://{}/{}/'.format(self.s3_bucket, self.bucket_folder_path)
         if params:
             sql = sql.format(*params)
@@ -62,8 +69,10 @@ class AthenaClient(object):
     @logger
     def get_dataframe_from_query_execution_id(self, query_execution_id, check_sleep_time=2, file_ext='csv'):
         self.__wait_for_query_results(query_execution_id, check_sleep_time)
-        return pd.read_csv('s3://{0}/{1}/{2}.{3}'.format(self.s3_bucket, self.bucket_folder_path, query_execution_id, file_ext),
-                           keep_default_na=False, dtype=object, sep='\t' if file_ext == 'txt' else ',', header=-1 if file_ext == 'txt' else 'infer')
+        return pd.read_csv(
+            's3://{0}/{1}/{2}.{3}'.format(self.s3_bucket, self.bucket_folder_path, query_execution_id, file_ext),
+            keep_default_na=False, dtype=object, sep='\t' if file_ext == 'txt' else ',',
+            header=-1 if file_ext == 'txt' else 'infer')
 
     @logger
     def __wait_for_query_results(self, query_execution_id, check_sleep_time=2):
@@ -93,7 +102,7 @@ class AthenaClient(object):
 
     def execute_query_and_wait_for_results(self, sql, *params):
         _logger.info('m=execute_query_and_wait_for_results, sql={}, *params={}'.format(sql, params))
-        
+
         query_execution_id = self.execute_raw_query(sql, *params)
         self.__wait_for_query_results(query_execution_id)
 
@@ -108,7 +117,7 @@ class AthenaClient(object):
 
     def create_parquet_from_query(self, key, query, raw_columns=None, clean_columns=None):
         _logger.info('m=create_parquet_from_query, key={}, query={}'.format(key, query))
-        
+
         df = self.execute_query_and_return_dataframe(query)
         self.create_parquet_from_df(key, df, raw_columns, clean_columns)
 
@@ -193,9 +202,9 @@ class AthenaClient(object):
             self.execute_query_and_wait_for_results(sql=drop_stmt)
         except Exception:
             _logger.warn('m=upsert_single_partition, bucket_folder_path={}, database={}, table={}, partition_name={}, '
-                         'partition_value={}, msg=exception raised while deleting partition'.format(bucket_folder_path, 
-                                                                                                    database, table, 
-                                                                                                    partition_name, 
+                         'partition_value={}, msg=exception raised while deleting partition'.format(bucket_folder_path,
+                                                                                                    database, table,
+                                                                                                    partition_name,
                                                                                                     partition_value))
 
         add_stmt = """ALTER TABLE {0}.{1} 
