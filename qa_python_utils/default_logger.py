@@ -30,7 +30,7 @@ def logger(func=None, exclude=None):
         def _wrapper(*args, **kwargs):
             logging_string = 'm={}'
 
-            if args and len(args) > 1:
+            if args is not None and len(args) > 1:
                 complete_args = ''
                 has_multiple_params = len(func.__code__.co_varnames) < len(args)
                 for index, arg in enumerate(args):
@@ -54,10 +54,10 @@ def logger(func=None, exclude=None):
                 if len(complete_args) > 0:
                     logging_string += ', {}'.format(complete_args)
 
-            if kwargs and len(kwargs) > 0:
+            if kwargs is not None and len(kwargs) > 0:
                 logging_string += ', kwargs={}'
 
-            if (not args or len(args) <= 1) and (not kwargs and len(kwargs) <= 0):
+            if (args is None or len(args) <= 1) and (kwargs is None and len(kwargs) <= 1):
                 logging_string += ', msg=init'
 
             _logger.info(logging_string.format(func.__name__, kwargs))
