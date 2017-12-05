@@ -54,7 +54,7 @@ def logger(func=None, exclude=None):
                 if len(complete_args) > 0:
                     logging_string += ', {}'.format(complete_args)
 
-            if kwargs is not None and len(kwargs) > 0 and exclude in func.__code__.co_varnames:
+            if kwargs is not None and len(kwargs) > 0 and exclude not in func.__code__.co_varnames:
                 logging_string += ', kwargs={}'
 
             if (args is None or len(args) <= 1) and (kwargs is None and len(kwargs) <= 1):
