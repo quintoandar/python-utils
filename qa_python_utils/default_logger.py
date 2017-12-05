@@ -30,7 +30,7 @@ def logger(func=None, exclude=None):
         def _wrapper(*args, **kwargs):
             logging_string = 'm={}'
 
-            if args is not None and len(args) > 1:
+            if args is not None and len(args) > 0:
                 complete_args = ''
                 has_multiple_params = len(func.__code__.co_varnames) < len(args)
                 for index, arg in enumerate(args):
