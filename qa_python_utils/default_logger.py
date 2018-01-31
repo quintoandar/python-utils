@@ -1,3 +1,4 @@
+import inspect
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -21,6 +22,12 @@ def logger(func=None, exclude=None):
     :param exclude: param names to be excluded in the logging string
     :return: complete logging string
     """
+
+    try:
+        __logger = logging.getLogger(inspect.stack()[-2][3])
+    except IndexError:
+        __logger = _logger
+
     if func is None:
         def partial_wrapper(func):
             return logger(func, exclude)
@@ -60,11 +67,48 @@ def logger(func=None, exclude=None):
             if (args is None or len(args) <= 1) and (kwargs is None and len(kwargs) <= 1):
                 logging_string += ', msg=init'
 
-            _logger.info(logging_string.format(func.__name__, kwargs))
+            __logger.info(logging_string.format(func.__name__, kwargs))
             try:
                 return func(*args, **kwargs)
             except:
-                _logger.exception('m={}, msg=exception'.format(func.__name__))
+                __logger.exception('m={}, msg=exception'.format(func.__name__))
                 raise
 
         return _wrapper
+
+
+if __name__ == '__main__':
+    class LoggerTester:
+        def __init__(self):
+            pass
+
+        class SubTester:
+            def __init__(self):
+                pass
+
+            @logger
+            def sub_test(self, x):
+                print x
+
+        sub_tester = SubTester()
+
+        @logger(exclude='x')
+        def test(self, x, y):
+            print x, y
+
+
+    def ultra_test(x):
+        tester.sub_tester.sub_test(x)
+
+
+    def ultra_mega_test(x):
+        ultra_test(x)
+
+
+    tester = LoggerTester()
+    tester.sub_tester.sub_test('test1')
+    tester.test('test2', 'test3')
+
+    ultra_test('test4')
+
+    ultra_mega_test('test5')
