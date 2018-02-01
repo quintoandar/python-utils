@@ -64,7 +64,7 @@ class AthenaClient(object):
         self.__wait_for_query_results(query_execution_id, check_sleep_time)
         return pd.read_csv(
             's3://{0}/{1}/{2}.{3}'.format(self.s3_bucket, self.bucket_folder_path, query_execution_id, file_ext),
-            keep_default_na=False, dtype=object, sep='\t' if file_ext == 'txt' else ',',
+            keep_default_na=False, sep='\t' if file_ext == 'txt' else ',',
             header=-1 if file_ext == 'txt' else 'infer')
 
     @logger
