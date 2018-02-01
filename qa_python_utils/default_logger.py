@@ -88,15 +88,16 @@ if __name__ == '__main__':
 
             @logger
             def sub_test(self, x):
-                print x
+                print 'msg={}'.format(x)
 
         sub_tester = SubTester()
 
         @logger(exclude='x')
         def test(self, x, y):
-            print x, y
+            print'msg={}-{}'.format(x, y)
 
 
+    @logger
     def ultra_test(x):
         tester.sub_tester.sub_test(x)
 
@@ -108,7 +109,5 @@ if __name__ == '__main__':
     tester = LoggerTester()
     tester.sub_tester.sub_test('test1')
     tester.test('test2', 'test3')
-
     ultra_test('test4')
-
     ultra_mega_test('test5')
