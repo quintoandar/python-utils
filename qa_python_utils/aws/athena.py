@@ -1,12 +1,13 @@
-import inspect
 import re
 import sys
 import time
 
 import boto3
+import botocore
 import fastparquet as fp
 import pandas as pd
 import s3fs
+
 from qa_python_utils.default_logger import logger, _logger
 
 reload(sys)
@@ -18,7 +19,7 @@ class AthenaClient(object):
     def __init__(self, s3_bucket):
         self.s3_bucket = s3_bucket
         self.athena_client = boto3.client('athena')
-        self.s3_client = boto3.client('s3')
+        self.s3_resource = boto3.resource('s3')
         self.bucket_folder_path = 'query_results'
 
     @logger
@@ -60,12 +61,25 @@ class AthenaClient(object):
         return response['QueryExecutionId']
 
     @logger
+    def __download_from_s3(self, key):
+        try:
+            self.s3_resource.Bucket(self.s3_bucket).download_file('{}/{}'.format(self.bucket_folder_path, key),
+                                                                  '/tmp/{}'.format(key))
+        except botocore.exceptions.ClientError as e:
+            if e.response['Error']['Code'] == "404":
+                _logger.error("m=__download_from_s3, msg=The object does not exist.")
+                return False
+            else:
+                raise
+        return True
+    
+    @logger
     def get_dataframe_from_query_execution_id(self, query_execution_id, check_sleep_time=2, file_ext='csv'):
         self.__wait_for_query_results(query_execution_id, check_sleep_time)
-        return pd.read_csv(
-            's3://{0}/{1}/{2}.{3}'.format(self.s3_bucket, self.bucket_folder_path, query_execution_id, file_ext),
-            keep_default_na=False, sep='\t' if file_ext == 'txt' else ',',
-            header=-1 if file_ext == 'txt' else 'infer')
+        key = '{0}.{1}'.format(query_execution_id, file_ext)
+        self.__download_from_s3(key)
+        return pd.read_csv('/tmp/{}'.format(key), keep_default_na=False, sep='\t' if file_ext == 'txt' else ',',
+                           header=-1 if file_ext == 'txt' else 'infer')
 
     @logger
     def __wait_for_query_results(self, query_execution_id, check_sleep_time=2):
