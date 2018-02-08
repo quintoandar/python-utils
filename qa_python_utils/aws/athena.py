@@ -72,7 +72,8 @@ class AthenaClient(object):
             else:
                 raise
         return True
-
+    
+    @logger
     def get_dataframe_from_query_execution_id(self, query_execution_id, check_sleep_time=2, file_ext='csv'):
         self.__wait_for_query_results(query_execution_id, check_sleep_time)
         key = '{0}.{1}'.format(query_execution_id, file_ext)
