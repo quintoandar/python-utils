@@ -78,8 +78,8 @@ class AthenaClient(object):
         self.__wait_for_query_results(query_execution_id, check_sleep_time)
         key = '{0}.{1}'.format(query_execution_id, file_ext)
         self.__download_from_s3(key)
-        return pd.read_csv('/tmp/{}'.format(key), keep_default_na=False, dtype=object,
-                           sep='\t' if file_ext == 'txt' else ',', header=-1 if file_ext == 'txt' else 'infer')
+        return pd.read_csv('/tmp/{}'.format(key), keep_default_na=False, sep='\t' if file_ext == 'txt' else ',',
+                           header=-1 if file_ext == 'txt' else 'infer')
 
     @logger
     def __wait_for_query_results(self, query_execution_id, check_sleep_time=2):
