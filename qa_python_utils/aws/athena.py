@@ -10,8 +10,12 @@ import s3fs
 
 from qa_python_utils.default_logger import logger, _logger
 
+# while working with ipython notebooks, the stdout would be sent to the default tunnel (server)
+# in order to work it around, the stdout needs to be stored and then reassigned after working with sys
+stdout = sys.stdout
 reload(sys)
 sys.setdefaultencoding('utf8')
+sys.stdout = stdout
 
 
 class AthenaClient(object):
