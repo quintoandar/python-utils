@@ -18,7 +18,7 @@ class BatchClient(object):
         self.batch_client = boto3.client('batch')
 
     @logger
-    def __check_running_jobs(self, job_name, job_queue, max_running_jobs):
+    def __has_job_exceeded_max_running(self, job_name, job_queue, max_running_jobs):
         all_running_jobs = self.batch_client.list_jobs(
             jobQueue=job_queue,
             jobStatus='RUNNING',
@@ -38,13 +38,13 @@ class BatchClient(object):
             _logger.error('m=start_batch_job, command={}, msg=wrong params'.format(command))
             return
 
-        check_result = self.__check_running_jobs(
+        exceeded_max_running = self.__has_job_exceeded_max_running(
             job_name=job_name,
             job_queue=job_queue,
             max_running_jobs=max_running_jobs
         )
 
-        if check_result is True:
+        if exceeded_max_running is True:
             _logger.warn('m=start_batch_job, msg=exceeded max running jobs')
             return
 
