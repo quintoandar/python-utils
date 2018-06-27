@@ -1,6 +1,7 @@
 import sys
 
 import boto3
+
 from qa_python_utils.default_logger import logger, _logger
 
 reload(sys)
@@ -109,3 +110,19 @@ class BatchClient(object):
                 'job'.format(
                     job_name, job_queue, job_definition, command))
             raise e
+
+    @logger
+    def get_job_status_by_id(self, job_id):
+        if job_id is None:
+            _logger.error('m=get_job_status_by_id, job_id=None')
+            return None
+
+        job_description = self.batch_client.describe_jobs(
+            jobs=[job_id]
+        )
+
+        if len(job_description['jobs']) == 0:
+            _logger.error('m=get_job_status_by_id, job_id={}, msg=job not found'.format(job_id))
+            return None
+
+        return job_description['jobs'][0]['status']
