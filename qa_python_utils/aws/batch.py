@@ -15,11 +15,11 @@ class BatchClient(object):
 
     @logger
     def __init__(self):
-        self.batch_client = boto3.client('batch')
+        self._batch_client = boto3.client('batch')
 
     @logger
     def get_running_jobs_list(self, job_name, job_queue):
-        all_running_jobs = self.batch_client.list_jobs(
+        all_running_jobs = self._batch_client.list_jobs(
             jobQueue=job_queue,
             jobStatus='RUNNING',
             maxResults=1000
@@ -84,7 +84,7 @@ class BatchClient(object):
             return
 
         try:
-            r = self.batch_client.submit_job(
+            r = self._batch_client.submit_job(
                 jobName=job_name,
                 jobQueue=job_queue,
                 jobDefinition=job_definition,
@@ -117,7 +117,7 @@ class BatchClient(object):
             _logger.error('m=get_job_info_by_id, job_id=None')
             return None
 
-        job_description = self.batch_client.describe_jobs(
+        job_description = self._batch_client.describe_jobs(
             jobs=[job_id]
         )
 

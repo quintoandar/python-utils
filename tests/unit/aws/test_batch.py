@@ -36,7 +36,7 @@ class AWSBatchTest(TestCase):
 
         # calls
         with self.batch_stubber:
-            self.batch_client.batch_client = self.batch_session
+            self.batch_client._batch_client = self.batch_session
             response = self.batch_client.get_job_info_by_id(job_id=job_id)
 
         # assertions
@@ -64,7 +64,7 @@ class AWSBatchTest(TestCase):
 
         # calls
         with self.batch_stubber:
-            self.batch_client.batch_client = self.batch_session
+            self.batch_client._batch_client = self.batch_session
             response = self.batch_client.get_job_info_by_id(job_id=job_id)
 
         # assertions
@@ -96,7 +96,7 @@ class AWSBatchTest(TestCase):
 
         # calls
         with self.batch_stubber:
-            self.batch_client.batch_client = self.batch_session
+            self.batch_client._batch_client = self.batch_session
             response = self.batch_client.get_job_field_info_by_id(
                 field_name='field_name',
                 job_id=job_id
@@ -127,7 +127,7 @@ class AWSBatchTest(TestCase):
 
         # calls
         with self.batch_stubber:
-            self.batch_client.batch_client = self.batch_session
+            self.batch_client._batch_client = self.batch_session
             response = self.batch_client.get_job_field_info_by_id(
                 field_name='jobId',
                 job_id=job_id
@@ -163,7 +163,7 @@ class AWSBatchTest(TestCase):
 
         # calls
         with self.batch_stubber:
-            self.batch_client.batch_client = self.batch_session
+            self.batch_client._batch_client = self.batch_session
             response = self.batch_client.get_job_field_info_by_id(
                 field_name='status',
                 job_id=job_id
@@ -200,7 +200,7 @@ class AWSBatchTest(TestCase):
 
         # calls
         with self.batch_stubber:
-            self.batch_client.batch_client = self.batch_session
+            self.batch_client._batch_client = self.batch_session
             response = self.batch_client.get_job_field_info_by_id(
                 field_name='createdAt',
                 job_id=job_id
@@ -236,7 +236,7 @@ class AWSBatchTest(TestCase):
 
         # calls
         with self.batch_stubber:
-            self.batch_client.batch_client = self.batch_session
+            self.batch_client._batch_client = self.batch_session
             response = self.batch_client.get_job_field_info_by_id(
                 field_name='startedAt',
                 job_id=job_id
@@ -273,7 +273,7 @@ class AWSBatchTest(TestCase):
 
         # calls
         with self.batch_stubber:
-            self.batch_client.batch_client = self.batch_session
+            self.batch_client._batch_client = self.batch_session
             response = self.batch_client.get_job_field_info_by_id(
                 field_name='stoppedAt',
                 job_id=job_id
