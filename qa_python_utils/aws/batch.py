@@ -112,9 +112,9 @@ class BatchClient(object):
             raise e
 
     @logger
-    def get_job_status_by_id(self, job_id):
+    def get_job_info_by_id(self, job_id):
         if job_id is None:
-            _logger.error('m=get_job_status_by_id, job_id=None')
+            _logger.error('m=get_job_info_by_id, job_id=None')
             return None
 
         job_description = self.batch_client.describe_jobs(
@@ -122,7 +122,44 @@ class BatchClient(object):
         )
 
         if len(job_description['jobs']) == 0:
-            _logger.error('m=get_job_status_by_id, job_id={}, msg=job not found'.format(job_id))
+            _logger.error('m=get_job_info_by_id, job_id={}, msg=job not found'.format(job_id))
             return None
 
-        return job_description['jobs'][0]['status']
+        return job_description['jobs'][0]
+
+    @logger
+    def get_job_field_info_by_id(self, field_name, job_id):
+        job_info = self.get_job_info_by_id(job_id=job_id)
+        if field_name not in job_info:
+            _logger.warn('m=get_job_field_info_by_id, field_name={}, job_id={}'.format(field_name, job_id))
+            return None
+
+        return job_info[field_name]
+
+    @logger
+    def get_job_status_by_id(self, job_id):
+        return self.get_job_field_info_by_id(
+            field_name='status',
+            job_id=job_id
+        )
+
+    @logger
+    def get_job_created_at_by_id(self, job_id):
+        return self.get_job_field_info_by_id(
+            field_name='createdAt',
+            job_id=job_id
+        )
+
+    @logger
+    def get_job_started_at_by_id(self, job_id):
+        return self.get_job_field_info_by_id(
+            field_name='startedAt',
+            job_id=job_id
+        )
+
+    @logger
+    def get_job_stopped_at_by_id(self, job_id):
+        return self.get_job_field_info_by_id(
+            field_name='stoppedAt',
+            job_id=job_id
+        )
