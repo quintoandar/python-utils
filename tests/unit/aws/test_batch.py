@@ -8,11 +8,12 @@ from qa_python_utils.aws.batch import BatchClient
 
 class AWSBatchTest(TestCase):
     def setUp(self):
-        self.batch_client = BatchClient()
-
         self.batch_session = botocore.session.get_session().create_client('batch')
         self.batch_stubber = Stubber(self.batch_session)
 
+        with self.batch_stubber:
+            self.batch_client = BatchClient()
+        
     def tearDown(self):
         pass
 
