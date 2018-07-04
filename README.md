@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/quintoandar/python-utils.svg?branch=master)](https://travis-ci.org/quintoandar/python-utils)
+
 # QuintoAndar Python Utils
 A simple set of Python utils used at QuintoAndar.com
 
