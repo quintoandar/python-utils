@@ -7,6 +7,4 @@ install:
   - pip install -r requirements.txt
 
 script:
-  - unset AWS_DEFAULT_REGION
-  - unset AWS_CONTAINER_CREDENTIALS_RELATIVE_URI
   - pytest tests/unit/ -v
