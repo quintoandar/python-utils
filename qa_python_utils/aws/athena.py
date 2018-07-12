@@ -111,18 +111,18 @@ class AthenaClient(object):
                 )
             if first_run:
                 for value in result['ResultSet']['Rows'][0]['Data']:
-                    columns.append(str(value.get('VarCharValue', None)))
+                    columns.append(str(value.get('VarCharValue')))
 
                 for rows in result['ResultSet']['Rows'][1:]:
                     row = []
                     for values in rows['Data']:
-                        row.append(values.get('VarCharValue', None))
+                        row.append(values.get('VarCharValue'))
                     data.append(row)
             else:
                 for rows in result['ResultSet']['Rows']:
                     row = []
                     for values in rows['Data']:
-                        row.append(values.get('VarCharValue', None))
+                        row.append(values.get('VarCharValue'))
                     data.append(row)
             # update generator status
             first_run = False
