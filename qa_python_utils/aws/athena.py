@@ -37,11 +37,15 @@ class AthenaClient(object):
         query_execution_id = self.execute_file_query(filename, *params)
         return self.get_dataframe_from_query_execution_id(query_execution_id)
 
-    def execute_query_and_return_dataframe(self, sql, *params):
+    def execute_query_and_return_dataframe(self, sql, paginate=False, page_size=1000, *params):
         _logger.info('m=execute_query_and_return_dataframe, sql={}, *params={}'.format(sql, params))
 
         query_execution_id = self.execute_raw_query(sql, *params)
-        return self.get_dataframe_from_query_execution_id(query_execution_id=query_execution_id, file_ext='csv')
+        if paginate:
+            return self.get_paginated_dataframe_from_query_execution_id(query_execution_id=query_execution_id,
+                                                                        page_size=page_size)
+        else:
+            return self.get_dataframe_from_query_execution_id(query_execution_id=query_execution_id, file_ext='csv')
 
     def execute_txt_query_and_return_dataframe(self, sql, *params):
         _logger.info('m=execute_txt_query_and_return_dataframe, sql={}, *params={}'.format(sql, params))
@@ -76,7 +80,7 @@ class AthenaClient(object):
             else:
                 raise
         return True
-    
+
     @logger
     def get_dataframe_from_query_execution_id(self, query_execution_id, check_sleep_time=2, file_ext='csv'):
         self.__wait_for_query_results(query_execution_id, check_sleep_time)
@@ -84,6 +88,48 @@ class AthenaClient(object):
         self.__download_from_s3(key)
         return pd.read_csv('/tmp/{}'.format(key), keep_default_na=False, sep='\t' if file_ext == 'txt' else ',',
                            header=-1 if file_ext == 'txt' else 'infer')
+
+    @logger
+    def get_paginated_dataframe_from_query_execution_id(self, query_execution_id, check_sleep_time=2, page_size=1000):
+        self.__wait_for_query_results(query_execution_id, check_sleep_time)
+        final_run = False
+        first_run = True
+        token = None
+        columns = []
+        while not final_run:
+            data = []
+            if token:
+                result = self.athena_client.get_query_results(
+                    QueryExecutionId=query_execution_id,
+                    NextToken=token,
+                    MaxResults=page_size
+                )
+            else:
+                result = self.athena_client.get_query_results(
+                    QueryExecutionId=query_execution_id,
+                    MaxResults=page_size
+                )
+            if first_run:
+                for value in result['ResultSet']['Rows'][0]['Data']:
+                    columns.append(str(value.get('VarCharValue', None)))
+
+                for rows in result['ResultSet']['Rows'][1:]:
+                    row = []
+                    for values in rows['Data']:
+                        row.append(values.get('VarCharValue', None))
+                    data.append(row)
+            else:
+                for rows in result['ResultSet']['Rows']:
+                    row = []
+                    for values in rows['Data']:
+                        row.append(values.get('VarCharValue', None))
+                    data.append(row)
+            # update generator status
+            first_run = False
+            token = result.get('NextToken', None)
+            final_run = False if token else True
+            df = pd.DataFrame(data, columns=columns)
+            yield df
 
     @logger
     def __wait_for_query_results(self, query_execution_id, check_sleep_time=2):
