@@ -1,5 +1,6 @@
 # TODO allow handler to be chosen (file or stream)
 # TODO fix nested decorators losing class name
+# TODO overwrite message methods (info, warning...) to have a standard message
 
 import logging
 
