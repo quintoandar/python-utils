@@ -73,7 +73,7 @@ class QuintoAndarLogger(logging.Logger):
                     if index >= len(func.__code__.co_varnames):
                         complete_args += (
                             ('{})' if index == len(args) - 1 else '{}, ')
-                                .format(arg)
+                            .format(arg)
                         )
                         continue
 
@@ -83,8 +83,8 @@ class QuintoAndarLogger(logging.Logger):
 
                     complete_args += (
                         ('*{}=({}, '
-                         if len(args) > func.__code__.co_argcount
-                            and index >= func.__code__.co_argcount
+                         if len(args) > func.__code__.co_argcount and
+                            index >= func.__code__.co_argcount
                          else '{}={}, ').format(arg_name, arg)
                     )
 
@@ -101,8 +101,8 @@ class QuintoAndarLogger(logging.Logger):
                     exclude not in func.__code__.co_varnames):
                 logging_string += ', kwargs={}'
 
-            if ((args is None or len(args) <= 1)
-                    and (kwargs is None or len(kwargs) <= 1)):
+            if ((args is None or len(args) <= 1) and
+                    (kwargs is None or len(kwargs) <= 1)):
                 logging_string += ', msg=init'
 
             # show log
