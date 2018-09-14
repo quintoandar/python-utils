@@ -2,10 +2,12 @@ import sys
 
 import boto3
 
-from qa_python_utils.default_logger import logger, _logger
+from qa_python_utils import QuintoAndarLogger
 
 reload(sys)
 sys.setdefaultencoding('utf8')
+
+logger = QuintoAndarLogger('aws.batch')
 
 
 class BatchClient(object):
@@ -35,7 +37,7 @@ class BatchClient(object):
             job_queue=job_queue
         )
 
-        _logger.info(
+        logger.info(
             'm=__compare_running_instances, comparison_result={}'.format(len(running_jobs) >= comparison_value))
         return len(running_jobs) >= comparison_value
 
@@ -47,7 +49,7 @@ class BatchClient(object):
             comparison_value=1
         )
 
-        _logger.info('m=is_job_running, is_running={}'.format(comparison_result))
+        logger.info('m=is_job_running, is_running={}'.format(comparison_result))
         return comparison_result
 
     @logger
@@ -63,14 +65,14 @@ class BatchClient(object):
             job_queue=job_queue
         )
 
-        _logger.info('m=has_job_exceeded_max_running, running_jobs={}'.format(len(running_jobs)))
+        logger.info('m=has_job_exceeded_max_running, running_jobs={}'.format(len(running_jobs)))
         return comparison_result
 
     @logger
     def start_batch_job(self, job_name, job_queue, job_definition, command=None, vcpus=4, memory=4096,
                         max_running_jobs=1):
         if command is None or not isinstance(command, list):
-            _logger.error('m=start_batch_job, command={}, msg=wrong params'.format(command))
+            logger.error('m=start_batch_job, command={}, msg=wrong params'.format(command))
             return
 
         exceeded_max_running = self.has_job_exceeded_max_running(
@@ -80,7 +82,7 @@ class BatchClient(object):
         )
 
         if exceeded_max_running is True:
-            _logger.warn('m=start_batch_job, msg=exceeded max running jobs')
+            logger.warn('m=start_batch_job, msg=exceeded max running jobs')
             return
 
         try:
@@ -105,7 +107,7 @@ class BatchClient(object):
             return r
 
         except Exception as e:
-            _logger.error(
+            logger.error(
                 'm=start_batch_job, job_name={}, job_queue, job_definition={}, command={}, msg=error while submitting '
                 'job'.format(
                     job_name, job_queue, job_definition, command))
@@ -114,7 +116,7 @@ class BatchClient(object):
     @logger
     def get_job_info_by_id(self, job_id):
         if job_id is None:
-            _logger.error('m=get_job_info_by_id, job_id=None')
+            logger.error('m=get_job_info_by_id, job_id=None')
             return None
 
         job_description = self._batch_client.describe_jobs(
@@ -122,7 +124,7 @@ class BatchClient(object):
         )
 
         if len(job_description['jobs']) == 0:
-            _logger.error('m=get_job_info_by_id, job_id={}, msg=job not found'.format(job_id))
+            logger.error('m=get_job_info_by_id, job_id={}, msg=job not found'.format(job_id))
             return None
 
         return job_description['jobs'][0]
@@ -131,7 +133,7 @@ class BatchClient(object):
     def get_job_field_info_by_id(self, field_name, job_id):
         job_info = self.get_job_info_by_id(job_id=job_id)
         if field_name not in job_info:
-            _logger.warn('m=get_job_field_info_by_id, field_name={}, job_id={}'.format(field_name, job_id))
+            logger.warn('m=get_job_field_info_by_id, field_name={}, job_id={}'.format(field_name, job_id))
             return None
 
         return job_info[field_name]
