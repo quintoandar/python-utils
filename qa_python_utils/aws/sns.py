@@ -1,12 +1,12 @@
 import json
-import logging
 import os
 import boto3
 import datetime
 import arrow
 
+from qa_python_utils import QuintoAndarLogger
 
-logger = logging.getLogger(__name__)
+logger = QuintoAndarLogger('aws.sns')
 
 
 default_kwargs = {

@@ -8,7 +8,7 @@ import fastparquet as fp
 import pandas as pd
 import s3fs
 
-from qa_python_utils.default_logger import logger, _logger
+from qa_python_utils import QuintoAndarLogger
 
 # while working with ipython notebooks, the stdout would be sent to the default tunnel (server)
 # in order to work it around, the stdout needs to be stored and then reassigned after working with sys
@@ -16,6 +16,8 @@ stdout = sys.stdout
 reload(sys)
 sys.setdefaultencoding('utf8')
 sys.stdout = stdout
+
+logger = QuintoAndarLogger('aws.athena')
 
 
 class AthenaClient(object):
@@ -38,7 +40,7 @@ class AthenaClient(object):
         return self.get_dataframe_from_query_execution_id(query_execution_id)
 
     def execute_query_and_return_dataframe(self, sql, paginate=False, page_size=1000, *params):
-        _logger.info('m=execute_query_and_return_dataframe, sql={}, *params={}'.format(sql, params))
+        logger.info('m=execute_query_and_return_dataframe, sql={}, *params={}'.format(sql, params))
 
         query_execution_id = self.execute_raw_query(sql, *params)
         if paginate:
@@ -48,13 +50,13 @@ class AthenaClient(object):
             return self.get_dataframe_from_query_execution_id(query_execution_id=query_execution_id, file_ext='csv')
 
     def execute_txt_query_and_return_dataframe(self, sql, *params):
-        _logger.info('m=execute_txt_query_and_return_dataframe, sql={}, *params={}'.format(sql, params))
+        logger.info('m=execute_txt_query_and_return_dataframe, sql={}, *params={}'.format(sql, params))
 
         query_execution_id = self.execute_raw_query(sql, *params)
         return self.get_dataframe_from_query_execution_id(query_execution_id=query_execution_id, file_ext='txt')
 
     def execute_raw_query(self, sql, *params):
-        _logger.info('m=execute_raw_query, sql={}, *params={}'.format(sql, params))
+        logger.info('m=execute_raw_query, sql={}, *params={}'.format(sql, params))
 
         s3_staging_dir = 's3://{}/{}/'.format(self.s3_bucket, self.bucket_folder_path)
         if params:
@@ -75,7 +77,7 @@ class AthenaClient(object):
                                                                   '/tmp/{}'.format(key))
         except botocore.exceptions.ClientError as e:
             if e.response['Error']['Code'] == "404":
-                _logger.error("m=__download_from_s3, msg=The object does not exist.")
+                logger.error("m=__download_from_s3, msg=The object does not exist.")
                 return False
             else:
                 raise
@@ -158,7 +160,7 @@ class AthenaClient(object):
         return query_execution['QueryExecution']['Status']['State']
 
     def execute_query_and_wait_for_results(self, sql, *params):
-        _logger.info('m=execute_query_and_wait_for_results, sql={}, *params={}'.format(sql, params))
+        logger.info('m=execute_query_and_wait_for_results, sql={}, *params={}'.format(sql, params))
 
         query_execution_id = self.execute_raw_query(sql, *params)
         self.__wait_for_query_results(query_execution_id)
@@ -173,13 +175,13 @@ class AthenaClient(object):
         return query_execution_id
 
     def create_parquet_from_query(self, key, query, raw_columns=None, clean_columns=None):
-        _logger.info('m=create_parquet_from_query, key={}, query={}'.format(key, query))
+        logger.info('m=create_parquet_from_query, key={}, query={}'.format(key, query))
 
         df = self.execute_query_and_return_dataframe(query)
         self.create_parquet_from_df(key, df, raw_columns, clean_columns)
 
     def create_parquet_from_df(self, key, df, raw_columns=None, clean_columns=None):
-        _logger.info('m=create_parquet_from_df')
+        logger.info('m=create_parquet_from_df')
 
         df = df.astype(object).where(pd.notnull(df), None)
         if raw_columns is None:
@@ -211,11 +213,11 @@ class AthenaClient(object):
         return new_type[0](re.sub(regex_from, regex_to, entry))
 
     def __save_df_file_into_s3_as_parquet(self, df, bucket, file_path):
-        _logger.info('m=__save_df_file_into_s3_as_parquet')
+        logger.info('m=__save_df_file_into_s3_as_parquet')
         s3_fs = s3fs.S3FileSystem()
         fp.write('{}/{}'.format(bucket, file_path), df.where(df.notnull(), None), open_with=s3_fs.open)
 
-        _logger.info('m=__save_df_file_into_s3_as_parquet, msg={} ready!'.format(file_path))
+        logger.info('m=__save_df_file_into_s3_as_parquet, msg={} ready!'.format(file_path))
 
     def create_athena_table_with_json_serde(self, database, table_name, schema, location, partitions=None,
                                             serde_options=None, drop_if_exists=True):
@@ -240,11 +242,11 @@ class AthenaClient(object):
 
         query += """LOCATION '{}'""".format(location)
 
-        _logger.info('m=__create_athena_table, msg=Trying to create {}.{}...'.format(database, table_name))
+        logger.info('m=__create_athena_table, msg=Trying to create {}.{}...'.format(database, table_name))
 
         self.execute_query_and_wait_for_results(query)
 
-        _logger.info(
+        logger.info(
             'm=__create_athena_table, msg=Table created! If it has partitions and you need them right now, run msck_repair_table function.')
 
     def msck_repair_table(self, database, table_name):
@@ -258,7 +260,7 @@ class AthenaClient(object):
         try:
             self.execute_query_and_wait_for_results(sql=drop_stmt)
         except Exception:
-            _logger.warn('m=upsert_single_partition, bucket_folder_path={}, database={}, table={}, partition_name={}, '
+            logger.warn('m=upsert_single_partition, bucket_folder_path={}, database={}, table={}, partition_name={}, '
                          'partition_value={}, msg=exception raised while deleting partition'.format(bucket_folder_path,
                                                                                                     database, table,
                                                                                                     partition_name,
@@ -314,7 +316,7 @@ class AthenaClient(object):
         #         format(pp[1], pp[3], pp[5])
         #     sql += """LOCATION '{}'""".format(bucket_path + p)
         #
-        #     _logger.info('m=update_partitions, msg=Adding new partition at {}'.format(bucket_path + p))
+        #     logger.info('m=update_partitions, msg=Adding new partition at {}'.format(bucket_path + p))
         #     self._execute_query(sql)
 
         # TODO Need to figure out how to implement this one to be generic at location and partitions!
