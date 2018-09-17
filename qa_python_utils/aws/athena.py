@@ -360,7 +360,3 @@ class AthenaClient(object):
 
         # TODO Need to figure out how to implement this one to be generic at location and partitions!
         raise NotImplementedError
-
-
-a = AthenaClient('5a-datalake')
-print a.execute_raw_query('select * from datalake_raw.ebdb_contrato_{x} limit 10', 'asdasda')
