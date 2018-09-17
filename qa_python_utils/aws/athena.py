@@ -1,12 +1,11 @@
-import re
-import sys
-import time
-
 import boto3
 import botocore
 import fastparquet as fp
 import pandas as pd
+import re
 import s3fs
+import sys
+import time
 
 from qa_python_utils import QuintoAndarLogger
 
@@ -22,49 +21,75 @@ logger = QuintoAndarLogger('aws.athena')
 
 class AthenaClient(object):
     @logger
-    def __init__(self, s3_bucket, bucket_folder_path='query_results'):
+    def __init__(self, s3_bucket=None, bucket_folder_path='query_results'):
         self.s3_bucket = s3_bucket
         self.athena_client = boto3.client('athena')
         self.s3_resource = boto3.resource('s3')
         self.bucket_folder_path = bucket_folder_path
 
     @logger
-    def execute_file_query(self, filename, *params):
+    def execute_file_query(self, filename, s3_bucket=None, bucket_folder_path=None):
         with open(filename) as f:
             sql = f.read()
-            return self.execute_raw_query(sql, *params)
+            return self.execute_raw_query(
+                sql=sql,
+                s3_bucket=s3_bucket,
+                bucket_folder_path=bucket_folder_path
+            )
 
     @logger
-    def execute_file_query_and_return_dataframe(self, filename, *params):
-        query_execution_id = self.execute_file_query(filename, *params)
+    def execute_file_query_and_return_dataframe(self, filename, s3_bucket=None, bucket_folder_path=None):
+        query_execution_id = self.execute_file_query(
+            filename=filename,
+            s3_bucket=s3_bucket,
+            bucket_folder_path=bucket_folder_path
+        )
         return self.get_dataframe_from_query_execution_id(query_execution_id)
 
-    def execute_query_and_return_dataframe(self, sql, paginate=False, page_size=1000, *params):
-        logger.info('m=execute_query_and_return_dataframe, sql={}, *params={}'.format(sql, params))
+    def execute_query_and_return_dataframe(self, sql, paginate=False, page_size=1000, s3_bucket=None,
+                                           bucket_folder_path=None):
+        logger.info(
+            'm=execute_query_and_return_dataframe, sql={}, paginate={}, page_size={}, s3_bucket={}, bucket_folder_path={}'.format(
+                sql, paginate, page_size, s3_bucket, bucket_folder_path))
 
-        query_execution_id = self.execute_raw_query(sql, *params)
+        query_execution_id = self.execute_raw_query(
+            sql=sql,
+            s3_bucket=s3_bucket,
+            bucket_folder_path=bucket_folder_path
+        )
         if paginate:
             return self.get_paginated_dataframe_from_query_execution_id(query_execution_id=query_execution_id,
                                                                         page_size=page_size)
         else:
             return self.get_dataframe_from_query_execution_id(query_execution_id=query_execution_id, file_ext='csv')
 
-    def execute_txt_query_and_return_dataframe(self, sql, *params):
-        logger.info('m=execute_txt_query_and_return_dataframe, sql={}, *params={}'.format(sql, params))
+    def execute_txt_query_and_return_dataframe(self, sql, s3_bucket=None, bucket_folder_path=None):
+        logger.info('m=execute_txt_query_and_return_dataframe, sql={}, s3_bucket={}, bucket_folder_path={}'.format(
+            sql, s3_bucket, bucket_folder_path))
 
-        query_execution_id = self.execute_raw_query(sql, *params)
+        query_execution_id = self.execute_raw_query(
+            sql=sql,
+            s3_bucket=s3_bucket,
+            bucket_folder_path=bucket_folder_path
+        )
         return self.get_dataframe_from_query_execution_id(query_execution_id=query_execution_id, file_ext='txt')
 
-    def execute_raw_query(self, sql, *params):
-        logger.info('m=execute_raw_query, sql={}, *params={}'.format(sql, params))
+    def execute_raw_query(self, sql, s3_bucket=None, bucket_folder_path=None):
+        logger.info('m=execute_raw_query, sql={}, s3_bucket={}, bucket_folder_path={}'.format(sql, s3_bucket,
+                                                                                              bucket_folder_path))
 
-        s3_staging_dir = 's3://{}/{}/'.format(self.s3_bucket, self.bucket_folder_path)
-        if params:
-            sql = sql.format(*params)
+        s3_bucket = s3_bucket or self.s3_bucket
+        bucket_folder_path = bucket_folder_path or self.bucket_folder_path
+
+        if s3_bucket is None or bucket_folder_path is None:
+            raise RuntimeError(
+                'm=execute_raw_query, s3_bucket={}, bucket_folder_path={}, msg=s3 path must be complete'.format(
+                    s3_bucket, bucket_folder_path))
+
         response = self.athena_client.start_query_execution(
             QueryString=sql,
             ResultConfiguration={
-                'OutputLocation': s3_staging_dir
+                'OutputLocation': 's3://{}/{}/'.format(s3_bucket, bucket_folder_path)
             }
         )
 
@@ -85,7 +110,7 @@ class AthenaClient(object):
 
     @logger
     def get_dataframe_from_query_execution_id(self, query_execution_id, check_sleep_time=2, file_ext='csv'):
-        self.__wait_for_query_results(query_execution_id, check_sleep_time)
+        self.wait_for_query_results(query_execution_id, check_sleep_time)
         key = '{0}.{1}'.format(query_execution_id, file_ext)
         self.__download_from_s3(key)
         return pd.read_csv('/tmp/{}'.format(key), keep_default_na=False, sep='\t' if file_ext == 'txt' else ',',
@@ -93,7 +118,7 @@ class AthenaClient(object):
 
     @logger
     def get_paginated_dataframe_from_query_execution_id(self, query_execution_id, check_sleep_time=2, page_size=1000):
-        self.__wait_for_query_results(query_execution_id, check_sleep_time)
+        self.wait_for_query_results(query_execution_id, check_sleep_time)
         final_run = False
         first_run = True
         token = None
@@ -134,7 +159,7 @@ class AthenaClient(object):
             yield df
 
     @logger
-    def __wait_for_query_results(self, query_execution_id, check_sleep_time=2):
+    def wait_for_query_results(self, query_execution_id, check_sleep_time=2):
         query_execution_status = self.__get_query_execution_status(query_execution_id)
         start_time = time.time()
         while query_execution_status in ('QUEUED', 'RUNNING'):
@@ -159,28 +184,42 @@ class AthenaClient(object):
         query_execution = self.athena_client.get_query_execution(QueryExecutionId=query_execution_id)
         return query_execution['QueryExecution']['Status']['State']
 
-    def execute_query_and_wait_for_results(self, sql, *params):
-        logger.info('m=execute_query_and_wait_for_results, sql={}, *params={}'.format(sql, params))
+    def execute_query_and_wait_for_results(self, sql, s3_bucket=None, bucket_folder_path=None):
+        logger.info(
+            'm=execute_query_and_wait_for_results, sql={}, s3_bucket={}, bucket_folder_path={}'.format(sql, s3_bucket,
+                                                                                                       bucket_folder_path))
 
-        query_execution_id = self.execute_raw_query(sql, *params)
-        self.__wait_for_query_results(query_execution_id)
+        query_execution_id = self.execute_raw_query(
+            sql=sql,
+            s3_bucket=s3_bucket,
+            bucket_folder_path=bucket_folder_path
+        )
 
+        self.wait_for_query_results(query_execution_id)
         return query_execution_id
 
     @logger
-    def execute_file_query_and_wait_for_results(self, filename, *params):
-        query_execution_id = self.execute_file_query(filename, *params)
-        self.__wait_for_query_results(query_execution_id)
-
+    def execute_file_query_and_wait_for_results(self, filename, s3_bucket=None, bucket_folder_path=None):
+        query_execution_id = self.execute_file_query(
+            filename=filename,
+            s3_bucket=s3_bucket,
+            bucket_folder_path=bucket_folder_path
+        )
+        self.wait_for_query_results(query_execution_id)
         return query_execution_id
 
-    def create_parquet_from_query(self, key, query, raw_columns=None, clean_columns=None):
+    def create_parquet_from_query(self, key, query, raw_columns=None, clean_columns=None, s3_bucket=None,
+                                  bucket_folder_path=None):
         logger.info('m=create_parquet_from_query, key={}, query={}'.format(key, query))
 
-        df = self.execute_query_and_return_dataframe(query)
+        df = self.execute_query_and_return_dataframe(
+            sql=query,
+            s3_bucket=s3_bucket,
+            bucket_folder_path=bucket_folder_path
+        )
         self.create_parquet_from_df(key, df, raw_columns, clean_columns)
 
-    def create_parquet_from_df(self, key, df, raw_columns=None, clean_columns=None):
+    def create_parquet_from_df(self, key, df, raw_columns=None, clean_columns=None, s3_bucket=None):
         logger.info('m=create_parquet_from_df')
 
         df = df.astype(object).where(pd.notnull(df), None)
@@ -196,7 +235,7 @@ class AthenaClient(object):
                                                                  index) if entry is not None and entry != '' else None
                                              for entry in df.loc[:, col]])
 
-        self.__save_df_file_into_s3_as_parquet(df=new_df, bucket=self.s3_bucket, file_path=key)
+        self.__save_df_file_into_s3_as_parquet(df=new_df, bucket=s3_bucket or self.s3_bucket, file_path=key)
 
     def __format_entry(self, entry, clean_columns, column_index):
         if entry is None or clean_columns is None:
@@ -261,10 +300,10 @@ class AthenaClient(object):
             self.execute_query_and_wait_for_results(sql=drop_stmt)
         except Exception:
             logger.warn('m=upsert_single_partition, bucket_folder_path={}, database={}, table={}, partition_name={}, '
-                         'partition_value={}, msg=exception raised while deleting partition'.format(bucket_folder_path,
-                                                                                                    database, table,
-                                                                                                    partition_name,
-                                                                                                    partition_value))
+                        'partition_value={}, msg=exception raised while deleting partition'.format(bucket_folder_path,
+                                                                                                   database, table,
+                                                                                                   partition_name,
+                                                                                                   partition_value))
 
         add_stmt = """ALTER TABLE {0}.{1} 
                        ADD IF NOT EXISTS PARTITION ({2}='{3}')
@@ -321,3 +360,7 @@ class AthenaClient(object):
 
         # TODO Need to figure out how to implement this one to be generic at location and partitions!
         raise NotImplementedError
+
+
+a = AthenaClient('5a-datalake')
+print a.execute_raw_query('select * from datalake_raw.ebdb_contrato_{x} limit 10', 'asdasda')
