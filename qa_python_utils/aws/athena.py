@@ -22,11 +22,11 @@ logger = QuintoAndarLogger('aws.athena')
 
 class AthenaClient(object):
     @logger
-    def __init__(self, s3_bucket):
+    def __init__(self, s3_bucket, bucket_folder_path='query_results'):
         self.s3_bucket = s3_bucket
         self.athena_client = boto3.client('athena')
         self.s3_resource = boto3.resource('s3')
-        self.bucket_folder_path = 'query_results'
+        self.bucket_folder_path = bucket_folder_path
 
     @logger
     def execute_file_query(self, filename, *params):
