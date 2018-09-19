@@ -26,6 +26,8 @@ except Exception:
     if CREDENTIALS_JSON is None:
         CREDENTIALS_JSON = os.getenv('QA_PYTHON_UTILS_CREDENTIALS_JSON', os.getenv('CREDENTIALS_JSON'))
 
+IMPERSONATED_USER_EMAIL = os.getenv('QA_PYTHON_UTILS_IMPERSONATED_USER_EMAIL', os.getenv('IMPERSONATED_USER_EMAIL'))
+
 log.info("Using CREDENTIALS_JSON: {}".format(CREDENTIALS_JSON))
 
 
@@ -36,4 +38,8 @@ def get_credentials():
     credentials = (ServiceAccountCredentials.
                    from_json_keyfile_dict(json.loads(CREDENTIALS_JSON),
                                           SCOPES))
+
+    if IMPERSONATED_USER_EMAIL:
+        credentials = credentials.create_delegated(IMPERSONATED_USER_EMAIL)
+
     return credentials
