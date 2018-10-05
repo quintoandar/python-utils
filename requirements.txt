@@ -1,5 +1,5 @@
-boto3>=1.4.4
-botocore==1.5.74
+boto3>=1.9.16
+botocore>=1.12.16
 google-api-python-client>=1.6.2
 oauth2client>=4.1.0
 flake8==3.3.0
