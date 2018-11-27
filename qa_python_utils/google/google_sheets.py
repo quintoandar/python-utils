@@ -11,11 +11,11 @@ class GoogleSheetsClient(object):
     """
     This client needs a credentials json called Service Account from Google Cloud Platform
     You have to create that in your project, and share sheet with Service Account e-mail
+    Also you need a scope URL from google sheets to use as class argument
     And pass as arguments to method a sheet Name and sheet Id
     """
-    def __init__(self, credentials):
-        self.scope = ['https://www.googleapis.com/auth/spreadsheets.readonly']
-        self.credentials = ServiceAccountCredentials.from_json_keyfile_dict(credentials, self.scope)
+    def __init__(self, credentials, scope):
+        self.credentials = ServiceAccountCredentials.from_json_keyfile_dict(credentials, scope)
         self.gsheets = gspread.authorize(self.credentials)
 
     @logger
