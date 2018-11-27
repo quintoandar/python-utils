@@ -7,7 +7,12 @@ from qa_python_utils import QuintoAndarLogger
 logger = QuintoAndarLogger('GoogleSheetsClient')
 
 
-class Spreadsheet(object):
+class GoogleSheetsClient(object):
+    """
+    This client needs a credentials json called Service Account from Google Cloud Platform
+    You have to create that in your project, and share sheet with Service Account e-mail
+    And pass as arguments to method a sheet Name and sheet Id
+    """
     def __init__(self, credentials):
         self.scope = ['https://www.googleapis.com/auth/spreadsheets.readonly']
         self.credentials = ServiceAccountCredentials.from_json_keyfile_dict(credentials, self.scope)
@@ -21,8 +26,7 @@ class Spreadsheet(object):
             logger.info("m=get_dataframe_from_sheet, name={}, id={}".format(sheet_name, sheet_id))
             sheet = working_sheet.worksheet(sheet_name)
         except Exception as e:
-            logger.error("m=get_dataframe_from_sheet, error={}".format(e.message))
-            raise Exception(e.message)
+            raise Exception("m=get_dataframe_from_sheet, error={}".format(e.message))
 
         logger.info("m=get_dataframe_from_sheet, sheet found, returning DataFrame!")
         return pd.DataFrame(sheet.get_all_records())
