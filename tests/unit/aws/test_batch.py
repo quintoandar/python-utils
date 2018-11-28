@@ -13,7 +13,7 @@ class AWSBatchTest(TestCase):
 
         with self.batch_stubber:
             self.batch_client = BatchClient()
-        
+
     def tearDown(self):
         pass
 
