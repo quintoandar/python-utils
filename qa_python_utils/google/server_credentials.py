@@ -1,4 +1,5 @@
 from __future__ import print_function
+from oauth2client.service_account import ServiceAccountCredentials
 
 import json
 import os
@@ -6,7 +7,6 @@ import logging
 
 log = logging.getLogger(__name__)
 
-from oauth2client.service_account import ServiceAccountCredentials
 
 SCOPES = ['https://www.googleapis.com/auth/drive',
           'https://www.googleapis.com/auth/drive.appdata',

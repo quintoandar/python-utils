@@ -77,8 +77,11 @@ class AthenaClient(object):
         return self.get_dataframe_from_query_execution_id(query_execution_id=query_execution_id, file_ext='txt')
 
     def execute_raw_query(self, sql, query_params=None, s3_bucket=None, bucket_folder_path=None):
-        logger.info('m=execute_raw_query, sql={}, query_params=None, s3_bucket={}, bucket_folder_path={}'.format(sql, query_params, s3_bucket,
-                                                                                              bucket_folder_path))
+        logger.info('m=execute_raw_query, sql={}, query_params=None, s3_bucket={}, bucket_folder_path={}'.format(
+            sql,
+            query_params,
+            s3_bucket,
+            bucket_folder_path))
 
         s3_bucket = s3_bucket or self.s3_bucket
         bucket_folder_path = bucket_folder_path or self.bucket_folder_path
@@ -188,8 +191,11 @@ class AthenaClient(object):
 
     def execute_query_and_wait_for_results(self, sql, query_params=None, s3_bucket=None, bucket_folder_path=None):
         logger.info(
-            'm=execute_query_and_wait_for_results, sql={}, query_params={}, s3_bucket={}, bucket_folder_path={}'.format(sql, query_params, s3_bucket,
-                                                                                                       bucket_folder_path))
+            'm=execute_query_and_wait_for_results, sql={}, query_params={}, s3_bucket={}, bucket_folder_path={}'.format(
+                sql,
+                query_params,
+                s3_bucket,
+                bucket_folder_path))
 
         query_execution_id = self.execute_raw_query(
             sql=sql.format(**query_params) if query_params else sql,
@@ -297,7 +303,7 @@ class AthenaClient(object):
 
     @logger
     def upsert_single_partition(self, bucket_folder_path, database, table, partition_name, partition_value):
-        drop_stmt = """ALTER TABLE {0}.{1} 
+        drop_stmt = """ALTER TABLE {0}.{1}
                         DROP IF EXISTS PARTITION ({2}='{3}')""".format(database, table, partition_name, partition_value)
 
         try:
@@ -309,7 +315,7 @@ class AthenaClient(object):
                                                                                                    partition_name,
                                                                                                    partition_value))
 
-        add_stmt = """ALTER TABLE {0}.{1} 
+        add_stmt = """ALTER TABLE {0}.{1}
                        ADD IF NOT EXISTS PARTITION ({2}='{3}')
                        LOCATION 's3://{4}/{2}={3}'""".format(database, table, partition_name, partition_value,
                                                              bucket_folder_path)
@@ -318,7 +324,7 @@ class AthenaClient(object):
 
     @logger
     def drop_single_partition(self, bucket_folder_path, database, table, partition_name, partition_value):
-        drop_stmt = """ALTER TABLE {0}.{1} 
+        drop_stmt = """ALTER TABLE {0}.{1}
                         DROP IF EXISTS PARTITION ({2}='{3}')""".format(database, table, partition_name, partition_value)
         self.execute_query_and_wait_for_results(sql=drop_stmt)
 
