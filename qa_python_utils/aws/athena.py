@@ -7,6 +7,8 @@ import botocore
 import fastparquet as fp
 import pandas as pd
 import s3fs
+from botocore.exceptions import ClientError
+
 from qa_python_utils import QuintoAndarLogger
 
 # while working with ipython notebooks, the stdout would be sent to the default tunnel (server)
@@ -51,7 +53,8 @@ class AthenaClient(object):
     def execute_query_and_return_dataframe(self, sql, query_params=None, paginate=False, page_size=1000, s3_bucket=None,
                                            bucket_folder_path=None):
         logger.info(
-            'm=execute_query_and_return_dataframe, sql={}, query_params={}, paginate={}, page_size={}, s3_bucket={}, bucket_folder_path={}'.format(
+            'm=execute_query_and_return_dataframe, sql={}, query_params={}, paginate={}, page_size={}, s3_bucket={}, '
+            'bucket_folder_path={}'.format(
                 sql, query_params, paginate, page_size, s3_bucket, bucket_folder_path))
 
         query_execution_id = self.execute_raw_query(
@@ -66,8 +69,10 @@ class AthenaClient(object):
             return self.get_dataframe_from_query_execution_id(query_execution_id=query_execution_id, file_ext='csv')
 
     def execute_txt_query_and_return_dataframe(self, sql, query_params=None, s3_bucket=None, bucket_folder_path=None):
-        logger.info('m=execute_txt_query_and_return_dataframe, sql={}, query_params={}, s3_bucket={}, bucket_folder_path={}'.format(
-            sql, query_params, s3_bucket, bucket_folder_path))
+        logger.info(
+            'm=execute_txt_query_and_return_dataframe, sql={}, query_params={}, s3_bucket={}, bucket_folder_path={'
+            '}'.format(
+                sql, query_params, s3_bucket, bucket_folder_path))
 
         query_execution_id = self.execute_raw_query(
             sql=sql.format(**query_params) if query_params else sql,
@@ -76,6 +81,7 @@ class AthenaClient(object):
         )
         return self.get_dataframe_from_query_execution_id(query_execution_id=query_execution_id, file_ext='txt')
 
+    @logger
     def execute_raw_query(self, sql, query_params=None, s3_bucket=None, bucket_folder_path=None):
         logger.info('m=execute_raw_query, sql={}, query_params=None, s3_bucket={}, bucket_folder_path={}'.format(
             sql,
@@ -91,14 +97,24 @@ class AthenaClient(object):
                 'm=execute_raw_query, s3_bucket={}, bucket_folder_path={}, msg=s3 path must be complete'.format(
                     s3_bucket, bucket_folder_path))
 
-        response = self.athena_client.start_query_execution(
-            QueryString=sql.format(**query_params) if query_params else sql,
-            ResultConfiguration={
-                'OutputLocation': 's3://{}/{}/'.format(s3_bucket, bucket_folder_path)
-            }
-        )
+        count = 0
+        while count < 3:
+            try:
+                response = self.athena_client.start_query_execution(
+                    QueryString=sql.format(**query_params) if query_params else sql,
+                    ResultConfiguration={
+                        'OutputLocation': 's3://{}/{}/'.format(s3_bucket, bucket_folder_path)
+                    }
+                )
+                return response['QueryExecutionId']
+            except ClientError as e:
+                logger.error(
+                    'm={}.init, msg=query failed, it will be retried in 60 seconds. Error: {}.'.format(
+                        'execute_raw_query', e.response['Error']['Message']))
+                time.sleep(60)
+                count += 1
 
-        return response['QueryExecutionId']
+        raise RuntimeError('m={}.init, msg=athena query failed three times.'.format('execute_raw_query'))
 
     @logger
     def __download_from_s3(self, key):
@@ -218,7 +234,8 @@ class AthenaClient(object):
         self.wait_for_query_results(query_execution_id)
         return query_execution_id
 
-    def create_parquet_from_query(self, key, query, query_params=None, raw_columns=None, clean_columns=None, s3_bucket=None,
+    def create_parquet_from_query(self, key, query, query_params=None, raw_columns=None, clean_columns=None,
+                                  s3_bucket=None,
                                   bucket_folder_path=None):
         logger.info('m=create_parquet_from_query, key={}, query={}'.format(key, query))
 
@@ -296,7 +313,8 @@ class AthenaClient(object):
         self.execute_query_and_wait_for_results(query)
 
         logger.info(
-            'm=__create_athena_table, msg=Table created! If it has partitions and you need them right now, run msck_repair_table function.')
+            'm=__create_athena_table, msg=Table created! If it has partitions and you need them right now, '
+            'run msck_repair_table function.')
 
     def msck_repair_table(self, database, table_name):
         self.execute_query_and_wait_for_results("""MSCK REPAIR TABLE {}.{}""".format(database, table_name))
