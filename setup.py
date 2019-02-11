@@ -1,12 +1,9 @@
-from distutils.core import setup
+from setuptools import setup, find_packages
 
 setup(
     name='qa-python-utils',
     version='0.1.0',
-    packages=['qa_python_utils',
-              'qa_python_utils.google',
-              'qa_python_utils.aws',
-              'qa_python_utils.kafka'],
+    packages=find_packages(),
     url='https://github.com/quintoandar/python-utils',
     license='',
     author='QuintoAndar',
