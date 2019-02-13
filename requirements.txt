@@ -1,11 +1,11 @@
-boto3>=1.9.16
-botocore>=1.12.16
-google-api-python-client>=1.6.2
-oauth2client>=4.1.0
+boto3==1.9.21
+botocore==1.12.21
+google-api-python-client==1.6.1
+oauth2client==4.1.3
 flake8==3.3.0
 httplib2shim==0.0.1
-numpy>=1.13.0
-pandas>=0.20.1
+numpy==1.13.0
+pandas==0.24.1
 Cython==0.25.2
 arrow==0.10.0
 s3fs==0.0.9
