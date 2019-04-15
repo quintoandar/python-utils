@@ -318,6 +318,37 @@ class AthenaClient(object):
 
     def msck_repair_table(self, database, table_name):
         self.execute_query_and_wait_for_results("""MSCK REPAIR TABLE {}.{}""".format(database, table_name))
+    
+    @logger 
+    def upsert_partition(self, bucket_folder_path, database, table, partition_name_list, partition_value_list):
+        partition_list = []
+
+        for partition_name, partition_value in zip(partition_name_list, partition_value_list):
+            # create list of partitions
+            partition_list.append("{0}='{1}'".format(partition_name, 
+                                                     partition_value))
+            # add path for each partition
+            bucket_folder_path += '/{0}={1}'.format(partition_name, partition_value)
+        
+        drop_stmt = """ALTER TABLE {0}.{1}
+                        DROP IF EXISTS PARTITION ({2})""".format(database, table, ','.join(partition_list))
+
+        try:
+            self.execute_query_and_wait_for_results(sql=drop_stmt)
+        except Exception:
+            logger.warn('m=upsert_partition, bucket_folder_path={}, database={}, table={}, partition_name={}, '
+                        'partition_value={}, msg=exception raised while deleting partition'.format(bucket_folder_path,
+                                                                                                   database, 
+                                                                                                   table,
+                                                                                                   ','.join(partition_name_list),
+                                                                                                   ','.join(partition_value_list)))
+        
+        add_stmt = """ALTER TABLE {0}.{1}
+                      ADD IF NOT EXISTS PARTITION ({2})
+                      LOCATION 's3://{3}'""".format(database, table, ','.join(partition_list), bucket_folder_path)
+
+        logger.info('m=upsert_partition, running this command: \n{}'.format(add_stmt))
+        self.execute_query_and_wait_for_results(sql=add_stmt)
 
     @logger
     def upsert_single_partition(self, bucket_folder_path, database, table, partition_name, partition_value):
