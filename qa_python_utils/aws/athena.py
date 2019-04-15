@@ -291,8 +291,7 @@ class AthenaClient(object):
                                    partitions=partitions, serde='org.openx.data.jsonserde.JsonSerDe',
                                    serde_options=serde_options, drop_if_exists=drop_if_exists)
 
-    def __create_athena_table(self, database, table_name, schema, location, serde, partitions=None,
-                              serde_options=None, drop_if_exists=True):
+    def __create_athena_table(self, database, table_name, schema, location, serde, partitions=None, serde_options=None, drop_if_exists=True):
         if drop_if_exists:
             self.execute_query_and_wait_for_results("""DROP TABLE IF EXISTS {}.{}""".format(database, table_name))
 
@@ -318,18 +317,18 @@ class AthenaClient(object):
 
     def msck_repair_table(self, database, table_name):
         self.execute_query_and_wait_for_results("""MSCK REPAIR TABLE {}.{}""".format(database, table_name))
-    
-    @logger 
+
+    @logger
     def upsert_partition(self, bucket_folder_path, database, table, partition_name_list, partition_value_list):
         partition_list = []
 
         for partition_name, partition_value in zip(partition_name_list, partition_value_list):
             # create list of partitions
-            partition_list.append("{0}='{1}'".format(partition_name, 
+            partition_list.append("{0}='{1}'".format(partition_name,
                                                      partition_value))
             # add path for each partition
             bucket_folder_path += '/{0}={1}'.format(partition_name, partition_value)
-        
+
         drop_stmt = """ALTER TABLE {0}.{1}
                         DROP IF EXISTS PARTITION ({2})""".format(database, table, ','.join(partition_list))
 
@@ -338,11 +337,11 @@ class AthenaClient(object):
         except Exception:
             logger.warn('m=upsert_partition, bucket_folder_path={}, database={}, table={}, partition_name={}, '
                         'partition_value={}, msg=exception raised while deleting partition'.format(bucket_folder_path,
-                                                                                                   database, 
+                                                                                                   database,
                                                                                                    table,
                                                                                                    ','.join(partition_name_list),
                                                                                                    ','.join(partition_value_list)))
-        
+
         add_stmt = """ALTER TABLE {0}.{1}
                       ADD IF NOT EXISTS PARTITION ({2})
                       LOCATION 's3://{3}'""".format(database, table, ','.join(partition_list), bucket_folder_path)
