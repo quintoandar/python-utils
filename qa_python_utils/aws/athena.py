@@ -324,35 +324,27 @@ class AthenaClient(object):
             'run add_partition function.')
 
         partition_list = []
-        
+
         for partition in partitions_list_dicts:
             # create list of partitions
             partition_list.append("{0}='{1}'".format(partition['partition_name'], partition['partition_value']))
             # add path for each partition
             bucket_folder_path += '/{0}={1}'.format(partition['partition_name'], partition['partition_value'])
-        
+
         drop_stmt = """ALTER TABLE {0}.{1}
                         DROP IF EXISTS PARTITION ({2})""".format(database, table, ','.join(partition_list))
 
         try:
             self.execute_query_and_wait_for_results(sql=drop_stmt)
-            
+
             add_stmt = """ALTER TABLE {0}.{1}
                     ADD IF NOT EXISTS PARTITION ({2})
                     LOCATION 's3://{3}'""".format(database, table, ','.join(partition_list), bucket_folder_path)
 
             logger.info('m=upsert_partition, statement: \n{}'.format(add_stmt))
 
-            try:
-                self.execute_query_and_wait_for_results(sql=add_stmt)
+            self.execute_query_and_wait_for_results(sql=add_stmt)
 
-            except Exception: 
-                
-                logger.warn('m=upsert_partitions, bucket_folder_path={}, database={}, table={}, partitions=({}), '
-                        'msg=exception raised while adding partition '.format(bucket_folder_path,
-                                                                              database,
-                                                                              table,
-                                                                              ','.join(partition_list)))
         except Exception:
             logger.warn('m=upsert_partitions, bucket_folder_path={}, database={}, table={}, partitions=({}), '
                         'msg=exception raised while deleting partition '.format(bucket_folder_path,
