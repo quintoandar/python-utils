@@ -346,7 +346,7 @@ class AthenaClient(object):
                       ADD IF NOT EXISTS PARTITION ({2})
                       LOCATION 's3://{3}'""".format(database, table, ','.join(partition_list), bucket_folder_path)
 
-        logger.info('m=upsert_partition, running this command: \n{}'.format(add_stmt))
+        logger.info('m=upsert_partition, statement=\n{}'.format(add_stmt))
         self.execute_query_and_wait_for_results(sql=add_stmt)
 
     @logger
