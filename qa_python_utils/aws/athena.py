@@ -318,14 +318,14 @@ class AthenaClient(object):
     def msck_repair_table(self, database, table_name):
         self.execute_query_and_wait_for_results("""MSCK REPAIR TABLE {}.{}""".format(database, table_name))
 
-    def upsert_partitions(self, bucket_folder_path, database, table, partitions_list_dict):
+    def upsert_partitions(self, bucket_folder_path, database, table, partitions_list_dicts):
         logger.info(
             'm=upsert_partitions, msg=Method to create multiple partitions within a table'
             'run add_partition function.')
 
         partition_list = []
         
-        for partition in partitions_list_dict:
+        for partition in partitions_list_dicts:
             # create list of partitions
             partition_list.append("{0}='{1}'".format(partition['partition_name'], partition['partition_value']))
             # add path for each partition
