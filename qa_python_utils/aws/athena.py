@@ -318,36 +318,47 @@ class AthenaClient(object):
     def msck_repair_table(self, database, table_name):
         self.execute_query_and_wait_for_results("""MSCK REPAIR TABLE {}.{}""".format(database, table_name))
 
-    @logger
-    def upsert_partitions(self, bucket_folder_path, database, table, partition_name_list, partition_value_list):
+    def upsert_partitions(self, bucket_folder_path, database, table, partitions_list_dict):
+        logger.info(
+            'm=upsert_partitions, msg=Method to create multiple partitions within a table'
+            'run add_partition function.')
+
         partition_list = []
-
-        for partition_name, partition_value in zip(partition_name_list, partition_value_list):
+        
+        for partition in partitions_list_dict:
             # create list of partitions
-            partition_list.append("{0}='{1}'".format(partition_name,
-                                                     partition_value))
+            partition_list.append("{0}='{1}'".format(partition['partition_name'], partition['partition_value']))
             # add path for each partition
-            bucket_folder_path += '/{0}={1}'.format(partition_name, partition_value)
-
+            bucket_folder_path += '/{0}={1}'.format(partition['partition_name'], partition['partition_value'])
+        
         drop_stmt = """ALTER TABLE {0}.{1}
                         DROP IF EXISTS PARTITION ({2})""".format(database, table, ','.join(partition_list))
 
         try:
             self.execute_query_and_wait_for_results(sql=drop_stmt)
+            
+            add_stmt = """ALTER TABLE {0}.{1}
+                    ADD IF NOT EXISTS PARTITION ({2})
+                    LOCATION 's3://{3}'""".format(database, table, ','.join(partition_list), bucket_folder_path)
+
+            logger.info('m=upsert_partition, statement: \n{}'.format(add_stmt))
+
+            try:
+                self.execute_query_and_wait_for_results(sql=add_stmt)
+
+            except Exception: 
+                
+                logger.warn('m=upsert_partitions, bucket_folder_path={}, database={}, table={}, partitions=({}), '
+                        'msg=exception raised while adding partition '.format(bucket_folder_path,
+                                                                              database,
+                                                                              table,
+                                                                              ','.join(partition_list)))
         except Exception:
-            logger.warn('m=upsert_partition, bucket_folder_path={}, database={}, table={}, partition_name={}, '
-                        'partition_value={}, msg=exception raised while deleting partition'.format(bucket_folder_path,
-                                                                                                   database,
-                                                                                                   table,
-                                                                                                   ','.join(partition_name_list),
-                                                                                                   ','.join(partition_value_list)))
-
-        add_stmt = """ALTER TABLE {0}.{1}
-                      ADD IF NOT EXISTS PARTITION ({2})
-                      LOCATION 's3://{3}'""".format(database, table, ','.join(partition_list), bucket_folder_path)
-
-        logger.info('m=upsert_partition, statement=\n{}'.format(add_stmt))
-        self.execute_query_and_wait_for_results(sql=add_stmt)
+            logger.warn('m=upsert_partitions, bucket_folder_path={}, database={}, table={}, partitions=({}), '
+                        'msg=exception raised while deleting partition '.format(bucket_folder_path,
+                                                                                database,
+                                                                                table,
+                                                                                ','.join(partition_list)))
 
     @logger
     def upsert_single_partition(self, bucket_folder_path, database, table, partition_name, partition_value):
