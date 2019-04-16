@@ -319,7 +319,7 @@ class AthenaClient(object):
         self.execute_query_and_wait_for_results("""MSCK REPAIR TABLE {}.{}""".format(database, table_name))
 
     @logger
-    def upsert_partition(self, bucket_folder_path, database, table, partition_name_list, partition_value_list):
+    def upsert_partitions(self, bucket_folder_path, database, table, partition_name_list, partition_value_list):
         partition_list = []
 
         for partition_name, partition_value in zip(partition_name_list, partition_value_list):
