@@ -1,7 +1,7 @@
 import re
 import sys
 import time
-
+import json
 import boto3
 import botocore
 import fastparquet as fp
@@ -318,8 +318,10 @@ class AthenaClient(object):
     def msck_repair_table(self, database, table_name):
         self.execute_query_and_wait_for_results("""MSCK REPAIR TABLE {}.{}""".format(database, table_name))
 
-    @logger(exclude=['partitions_list_dicts'])
     def upsert_partitions(self, bucket_folder_path, database, table, partitions_list_dicts):
+
+        logger.info('m=upsert_partitions, bucket_folder_path={}, database={}, table={}, partitions_list_dicts=({})'
+                    .format(bucket_folder_path, database, table, json.dumps(partitions_list_dicts)))
 
         partition_list = []
 
@@ -339,7 +341,7 @@ class AthenaClient(object):
                     ADD IF NOT EXISTS PARTITION ({2})
                     LOCATION 's3://{3}'""".format(database, table, ','.join(partition_list), bucket_folder_path)
 
-            logger.info('m=upsert_partition, statement: \n{}'.format(add_stmt))
+            logger.info('m=upsert_partitions, statement: \n{}'.format(add_stmt))
             self.execute_query_and_wait_for_results(sql=add_stmt)
 
         except Exception:
