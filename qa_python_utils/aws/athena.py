@@ -281,7 +281,8 @@ class AthenaClient(object):
     def __save_df_file_into_s3_as_parquet(self, df, bucket, file_path):
         logger.info('m=__save_df_file_into_s3_as_parquet')
         s3_fs = s3fs.S3FileSystem()
-        fp.write('{}/{}'.format(bucket, file_path), df.where(df.notnull(), None), open_with=s3_fs.open)
+        fp.write('{}/{}'.format(bucket, file_path), df.where(df.notnull(), None),
+                 open_with=s3_fs.open, row_group_offsets=500000)
 
         logger.info('m=__save_df_file_into_s3_as_parquet, msg={} ready!'.format(file_path))
 
