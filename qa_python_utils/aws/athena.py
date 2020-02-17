@@ -23,9 +23,16 @@ logger = QuintoAndarLogger('aws.athena')
 
 class AthenaClient(object):
     @logger
-    def __init__(self, s3_bucket=None, bucket_folder_path='query_results'):
+    def __init__(self, s3_bucket=None, bucket_folder_path='query_results', aws_access_key_id=None,
+                 aws_secret_access_key=None):
         self.s3_bucket = s3_bucket
-        self.athena_client = boto3.client('athena')
+
+        if aws_access_key_id is not None and aws_secret_access_key is not None:
+            self.athena_client = boto3.client('athena', aws_access_key_id=aws_access_key_id,
+                                              aws_secret_access_key=aws_secret_access_key)
+        else:
+            self.athena_client = boto3.client('athena')
+
         self.s3_resource = boto3.resource('s3')
         self.bucket_folder_path = bucket_folder_path
 
