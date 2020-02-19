@@ -26,8 +26,9 @@ class AthenaClient(object):
     def __init__(self, s3_bucket=None, aws_access_key_id=None, aws_secret_access_key=None,
                  bucket_folder_path='query_results'):
         self.s3_bucket = s3_bucket
-
-        if aws_access_key_id is not None and aws_secret_access_key is not None:
+        self.aws_access_key_id = aws_access_key_id
+        self.aws_secret_access_key = aws_secret_access_key
+        if self.aws_access_key_id is not None and self.aws_secret_access_key is not None:
             self.athena_client = boto3.client('athena', aws_access_key_id=aws_access_key_id,
                                               aws_secret_access_key=aws_secret_access_key)
             self.s3_resource = boto3.resource('s3', aws_access_key_id=aws_access_key_id,
@@ -289,7 +290,10 @@ class AthenaClient(object):
 
     def __save_df_file_into_s3_as_parquet(self, df, bucket, file_path):
         logger.info('m=__save_df_file_into_s3_as_parquet')
-        s3_fs = s3fs.S3FileSystem()
+        if self.aws_access_key_id is not None and self.aws_secret_access_key is not None:
+            s3_fs = s3fs.S3FileSystem(key=self.aws_access_key_id, secret=self.aws_secret_access_key)
+        else:
+            s3_fs = s3fs.S3FileSystem()
         fp.write('{}/{}'.format(bucket, file_path), df.where(df.notnull(), None),
                  open_with=s3_fs.open, row_group_offsets=500000)
 
