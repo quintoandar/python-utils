@@ -399,7 +399,7 @@ class AthenaClient(object):
             table_name,
             partition
         )
-        AthenaClient(self.s3_bucket).execute_raw_query(sql=sql)
+        self.execute_raw_query(sql=sql)
 
     def update_partitions(self, table, location):
         # An alternative approach would be to simply use an
