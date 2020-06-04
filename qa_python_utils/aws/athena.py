@@ -256,8 +256,8 @@ class AthenaClient(object):
         )
         self.create_parquet_from_df(key, df, row_group_offsets, raw_columns, clean_columns)
 
-    def create_parquet_from_df(self, key, df, row_group_offsets=500000,
-                               raw_columns=None,  clean_columns=None, s3_bucket=None):
+    def create_parquet_from_df(self, key, df, row_group_offsets=500000, raw_columns=None,
+                               clean_columns=None, s3_bucket=None):
         logger.info('m=create_parquet_from_df')
 
         df = df.astype(object).where(pd.notnull(df), None)
