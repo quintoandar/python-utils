@@ -244,9 +244,9 @@ class AthenaClient(object):
         self.wait_for_query_results(query_execution_id)
         return query_execution_id
 
-    def create_parquet_from_query(self, key, query, query_params=None, raw_columns=None, clean_columns=None,
-                                  s3_bucket=None,
-                                  bucket_folder_path=None):
+    def create_parquet_from_query(self, key, query, row_group_offsets=500000,
+                                  query_params=None, raw_columns=None, clean_columns=None,
+                                  s3_bucket=None, bucket_folder_path=None):
         logger.info('m=create_parquet_from_query, key={}, query={}'.format(key, query))
 
         df = self.execute_query_and_return_dataframe(
@@ -254,9 +254,10 @@ class AthenaClient(object):
             s3_bucket=s3_bucket,
             bucket_folder_path=bucket_folder_path
         )
-        self.create_parquet_from_df(key, df, raw_columns, clean_columns)
+        self.create_parquet_from_df(key, df, row_group_offsets, raw_columns, clean_columns)
 
-    def create_parquet_from_df(self, key, df, raw_columns=None, clean_columns=None, s3_bucket=None):
+    def create_parquet_from_df(self, key, df, row_group_offsets=500000, raw_columns=None,
+                               clean_columns=None, s3_bucket=None):
         logger.info('m=create_parquet_from_df')
 
         df = df.astype(object).where(pd.notnull(df), None)
@@ -272,7 +273,8 @@ class AthenaClient(object):
                                                                  index) if entry is not None and entry != '' else None
                                              for entry in df.loc[:, col]])
 
-        self.__save_df_file_into_s3_as_parquet(df=new_df, bucket=s3_bucket or self.s3_bucket, file_path=key)
+        self.__save_df_file_into_s3_as_parquet(df=new_df, bucket=s3_bucket or self.s3_bucket, file_path=key,
+                                               row_group_offsets=row_group_offsets)
 
     def __format_entry(self, entry, clean_columns, column_index):
         if entry is None or clean_columns is None:
@@ -288,14 +290,14 @@ class AthenaClient(object):
 
         return new_type[0](re.sub(regex_from, regex_to, entry))
 
-    def __save_df_file_into_s3_as_parquet(self, df, bucket, file_path):
+    def __save_df_file_into_s3_as_parquet(self, df, bucket, file_path, row_group_offsets):
         logger.info('m=__save_df_file_into_s3_as_parquet')
         if self.aws_access_key_id is not None and self.aws_secret_access_key is not None:
             s3_fs = s3fs.S3FileSystem(key=self.aws_access_key_id, secret=self.aws_secret_access_key)
         else:
             s3_fs = s3fs.S3FileSystem()
         fp.write('{}/{}'.format(bucket, file_path), df.where(df.notnull(), None),
-                 open_with=s3_fs.open, row_group_offsets=500000)
+                 open_with=s3_fs.open, row_group_offsets=row_group_offsets)
 
         logger.info('m=__save_df_file_into_s3_as_parquet, msg={} ready!'.format(file_path))
 
