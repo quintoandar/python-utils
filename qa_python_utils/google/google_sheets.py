@@ -29,7 +29,7 @@ class GoogleSheetsClient(object):
             raise Exception("m=get_dataframe_from_sheet, error=Spreadsheet was not found - {}".format(str(e)))
 
         except gspread.exceptions.WorksheetNotFound as e:
-            raise Exception("m=get_dataframe_from_sheet, error=Worksheet was not found - {}".format(str(e)))
+            raise Exception("m=get_dataframe_from_sheet, error=Worksheet not found - {}".format(str(e)))
 
         except Exception as e:
             raise Exception("m=get_dataframe_from_sheet, error={}".format(str(e)))
