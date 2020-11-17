@@ -254,6 +254,15 @@ class AthenaClient(object):
             s3_bucket=s3_bucket,
             bucket_folder_path=bucket_folder_path
         )
+
+        if df.empty:
+            logger.info(
+                "m=create_parquet_from_query, key={}, msg=Empty dataframe, ending execution".format(
+                    key
+                )
+            )
+            return
+
         self.create_parquet_from_df(key, df, row_group_offsets, raw_columns, clean_columns)
 
     def create_parquet_from_df(self, key, df, row_group_offsets=500000, raw_columns=None,
